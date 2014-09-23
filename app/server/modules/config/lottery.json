@@ -1,0 +1,16 @@
+{
+	"no":"20140912",
+	"open_date":"2014-09-20",
+	"base":50,
+	"winner_num":6,
+	"display":{
+		"cost":50,
+		"small_picture":"/static/small_lottery.png",
+		"large_picture":"/static/large_lottery.png",
+		"title":"iphone 6抽奖",
+		"rule":["每局只需50金币","共6部","9月20号公布结果，先到先得"]
+
+	}
+
+
+}

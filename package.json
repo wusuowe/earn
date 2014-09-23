@@ -1,0 +1,14 @@
+{
+  "name": "earn-money",
+  "description": "hello world test app",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+	  "express": "4.x",
+	  "mongodb": "1.2.7",
+	  "moment" : "2.5.x",
+	  "emailjs": "0.3.11",
+	  "stylus": "0.49.0",
+	  "jade": "0.31.0"
+  }
+}

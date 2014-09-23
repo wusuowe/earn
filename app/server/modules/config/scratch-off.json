@@ -1,0 +1,17 @@
+{
+	"base":30,
+	"min":0,
+	"ratio":0.8,
+	"pool":{"5":40,"10":30,"15":20,"20":10,"25":10,"50":10,"100":10,"200":10,"300":5},
+	"picture":{"happy":"/static/happy.png","encourage":"/static/encourage.png"},	
+	"high_value":20,
+	"display":{
+		"cost":30,
+		"small_picture":"/static/small_scratch.png",
+		"large_picture":"/static/large_scratch.png",
+		"title":"刮刮卡",
+		"rule":["每局只需30金币","不限制次数","最高10倍奖励"]
+	}
+
+
+}

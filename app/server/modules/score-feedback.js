@@ -1,46 +1,19 @@
 var crypto      = require('crypto');
-var MongoDB     = require('mongodb').Db;
-var Server      = require('mongodb').Server;
 var moment      = require('moment');
-var ICVL  = require('iconv-lite');
 var UT        = require('./utility');
 var ST = require('./setting');
-var dbPort      = ST.dbPort;
-var dbHost      = ST.dbHost;
-var dbName      = ST.dbName;
-var devServerSecret = ST.devServerSecret;
+var secretKey = ST.secretKey;
 
-var db = new MongoDB(dbName, new Server(dbHost, dbPort, {auto_reconnect: true}), {w: 1});
-
-db.open(function(e, d){
-	if (e) {
-		console.log(e);
-	}   else{
-		console.log('connected to database :: ' + dbName);
-	}
-});
-
+var db = require('./database').db;
 var score = db.collection('score');
 var account = db.collection('account');
         
-var md5 = function(str) {
-	str = ICVL.encode(str, 'utf8');
-	return crypto.createHash('md5').update(str).digest('hex');
-}
-
-var sha1 = function(str){
-	str = ICVL.encode(str, 'utf8');
-	return crypto.createHash('sha1').update(str).digest('hex');
-}
-
-UT.loadPrizeConfig('config/prize.json',function(e,o){});
-
-var validateYoumi = function(feedData,devServerSecret){
-	console.log(feedData);
+var validateYoumi = function(fd,secretKey){
+	console.log(fd);
 	var keys = []
-	for (k in feedData)
+	for (k in fd)
 	{
-		if (k!='sign' && feedData.hasOwnProperty(k))
+		if (k!='sign' && fd.hasOwnProperty(k))
 		{
 			keys.push(k);
 		}
@@ -48,35 +21,69 @@ var validateYoumi = function(feedData,devServerSecret){
 
 	keys.sort();
 
-	var sign = feedData['sign'];
+	var sign = fd['sign'];
 
 	var len = keys.length;
 	var kvs = "";
 
 	for (var i=0; i< len; i++){
-		kvs += keys[i]+"="+feedData[keys[i]];
+		kvs += keys[i]+"="+fd[keys[i]];
 	}
-	kvs += devServerSecret;
-	console.log(kvs,sign,md5(kvs));
+	kvs += secretKey;
+	console.log(kvs,sign,UT.md5(kvs));
 
-	return sign == md5(kvs);
+	return sign == UT.md5(kvs);
 }
 
-function addCoin(userId,points,callback){
-	account.findOne({user_id:userId},function(e,o){
+var validateLimei = function(fd,secretKey){
+	console.log(fd);
+	var keys = []
+	for (k in fd)
+	{
+		if (k!='sign' && fd.hasOwnProperty(k))
+		{
+			keys.push(k);
+		}
+	}
+
+	keys.sort();
+
+	var sign = fd['sign'];
+
+	var len = keys.length;
+	var kvs = "";
+
+	for (var i=0; i< len; i++){
+		kvs += keys[i]+"="+fd[keys[i]];
+	}
+	signed = UT.hmac(kvs,secretKey);
+	console.log(kvs,sign,signed);
+
+	return sign == signed;
+}
+
+function addCoin(userId,deviceId,points,desc,callback){
+	account.findOne({$or:[{user_id:userId},{device_id:deviceId}]},function(e,o){
 		if(e || !o){
-			callback('no user found');
+			callback('User is not existing.');
 		}else{
-			account.update({user_id:userId},{$inc:{coin:points}},{w:1},callback);
-			UT.log(userId,'earn','ad',points,'');
-			if(o.ask_code){
-				awardBoss(o.ask_code,points);
+			var now = moment().unix();
+			if(!o.task_time || (o.task_time+90) < now){
+				account.update({user_id:o.user_id},{$inc:{coin:points},$set:{new_income:1,task_time:now}},{w:1},callback);
+				UT.log(o.user_id,'earn','ad',points,desc);
+				if(o.ask_code){
+					awardBoss(o.user_id,o.ask_code,points);
+				}
+			}else{
+				account.update({user_id:o.user_id},{$set:{task_time:now}},callback);
+				UT.log(o.user_id,'warn','ad',points,desc);
 			}
 		}
 	});
 }
 
-function awardBoss(shareCode,coins){
+function awardBoss(userId,shareCode,coins){
+	console.log({ask_code:shareCode});
 	account.count({ask_code:shareCode},function(e,o){
 		if(o){
 			var bossPrize = prizeConfig.boss;
@@ -87,23 +94,49 @@ function awardBoss(shareCode,coins){
 					break;
 				}
 			}
-			account.update({share_code:shareCode},{$inc:{coin:prize,total_coin:prize,pupil_feed:prize}},{w:1},function(e,o){});
+			account.update({user_id:shareCode},{$inc:{coin:prize,total_coin:prize,pupil_feed:prize},$set:{new_income:1}},{w:1},function(e,o){
+				console.log({user_id:shareCode},{$inc:{coin:prize,total_coin:prize,pupil_feed:prize}});
+				UT.log(shareCode,'share','',prize,userId);
+			});
 		}
 
 	});
 }
 
-exports.scoreFromYoumi = function(feedData,callback){
-	if (validateYoumi(feedData,ST.YoumiSecret)){
-		score.findOne({order:feedData.order},function(e,o){
+exports.postbackLimei = function(fd,os,callback){
+	if (validateLimei(fd,ST.LimeiSecret[os])){
+		fd = formatFeedData(fd,os,'Limei');	
+		score.findOne({order:fd.orderId,platform:fd.platform},function(e,o){
 			if(o){
 				callback('duplication feed');
 			}else{
-				score.insert(feedData,{safe: true},function(e,o){
+				score.insert(fd,{safe: true},function(e,o){
 					if(e){
 						callback('insert feed error');
 					}else{
-						addCoin(feedData['device'],parseInt(feedData['points'],10),callback);
+						addCoin(fd.fd_user,fd.fd_device,fd.fd_coin,fd.fd_adname,callback);
+					}
+				});
+			}
+		});
+	}else{
+	callback('validate sign fail');
+	}
+}
+
+
+exports.postbackYoumi = function(fd,os,callback){
+	if (validateYoumi(fd,ST.YoumiSecret[os])){
+		fd = formatFeedData(fd,os,'Youmi');	
+		score.findOne({order:fd.order,platform:fd.platform},function(e,o){
+			if(o){
+				callback('duplication feed');
+			}else{
+				score.insert(fd,{safe: true},function(e,o){
+					if(e){
+						callback('insert feed error');
+					}else{
+						addCoin(fd.fd_user,fd.fd_device,fd.fd_coin,fd.fd_adname,callback);
 					}
 				});
 			}
@@ -115,17 +148,18 @@ exports.scoreFromYoumi = function(feedData,callback){
 
 var validateDuomeng = validateYoumi;
 
-exports.scoreFromDuomeng = function(feedData,callback){
-	if (validateDuomeng(feedData,ST.DuomengSecret)){
-		score.findOne({order:feedData.order},function(e,o){
+exports.postbackDuomeng = function(fd,os,callback){
+	if (validateDuomeng(fd,ST.DuomengSecret[os])){
+		fd = formatFeedData(fd,os,'Duomeng');	
+		score.findOne({orderid:fd.orderid,platform:fd.platform},function(e,o){
 			if(o){
 				callback('duplication feed');
 			}else{
-				score.insert(feedData,{safe: true},function(e,o){
+				score.insert(fd,{safe: true},function(e,o){
 					if(e){
 						callback('insert feed error');
 					}else{
-						addCoin(feedData['device'],parseInt(feedData['point'],10),callback);
+						addCoin(fd.fd_user,fd.fd_device,fd.fd_coin,fd.fd_adname,callback);
 					}
 				});
 			}
@@ -135,29 +169,30 @@ exports.scoreFromDuomeng = function(feedData,callback){
 	}
 }
 
-var validateMiidi = function(feedData,secretKey){
-	var srcSign = feedData['id']+feedData['trand_no']+feedData['cash'];
-	if (feedData['param0']){
-		srcSign += feedData['param0'];
+var validateMiidi = function(fd,secretKey){
+	var srcSign = fd['id']+fd['trand_no']+fd['cash'];
+	if (fd['param0']){
+		srcSign += fd['param0'];
 	}
 	srcSign += secretKey;
-	console.log(md5(srcSign));
+	console.log(UT.md5(srcSign));
 
-	return feedData['sign'] == md5(srcSign);
+	return fd['sign'] == UT.md5(srcSign);
 
 }
 
-exports.scoreFromMiidi = function(feedData,callback){
-	if(validateMiidi(feedData,ST.MiidiSecretKey)){
-		score.findOne({trand_no:feedData.trand_no},function(e,o){
+exports.postbackMiidi = function(fd,os,callback){
+	if(validateMiidi(fd,ST.MiidiSecret[os])){
+		fd = formatFeedData(fd,os,'Miidi');	
+		score.findOne({trand_no:fd.trand_no,platform:fd.platform},function(e,o){
 			if(o){
 				callback('duplication feed');
 			}else{
-				score.insert(feedData,{safe: true},function(e,o){
+				score.insert(fd,{safe: true},function(e,o){
 					if(e){
 						callback('insert feed error');
 					}else{
-						addCoin(feedData['imei'],parseInt(feedData['cash'],10),callback);
+						addCoin(fd.fd_user,fd.fd_device,fd.fd_coin,fd.fd_adname,callback);
 					}
 				});
 			}
@@ -169,23 +204,24 @@ exports.scoreFromMiidi = function(feedData,callback){
 
 }
 
-var validateDianru = function(feedData,callback){
-	var params = "?hashid="+feedData['hashid']+"&appid="+feedData['appid']+"&adid="+feedData['adid']+"&adname="+feedData['adname']+"&userid="+feedData['userid']+"&deviceid="+feedData['deviceid']+"&source=dianru&point="+feedData['point']+"&time="+feedData['time']+"&appsecret="+feedData['appsecret']; 
-	console.log(md5(params));
-	return feedData['checksum'] == md5(params); 
+var validateDianru = function(fd,callback){
+	var params = "?hashid="+fd.hashid+"&appid="+fd.appid+"&adid="+fd.adid+"&adname="+fd.adname+"&userid="+fd.userid+"&deviceid="+fd.deviceid+"&source=dianru&point="+fd.point+"&time="+fd.time+"&appsecret="+fd.appsecret; 
+	console.log(UT.md5(params));
+	return fd.checksum == UT.md5(params); 
 }
 
-exports.scoreFromDianru = function(feedData,callback){
-	if(validateDianru(feedData,ST.DianruSecretKey)){
-		score.findOne({hashid:feedData.hashid},function(e,o){
+exports.postbackDianru = function(fd,os,callback){
+	if(validateDianru(fd,ST.DianruSecret[os])){
+		fd = formatFeedData(fd,os,'Dianru');	
+		score.findOne({hashid:fd.hashid,platform:fd.platform},function(e,o){
 			if(o){
 				callback('duplication feed');
 			}else{
-				score.insert(feedData,{safe: true},function(e,o){
+				score.insert(fd,{safe: true},function(e,o){
 					if(e){
 						callback('insert feed error');
 					}else{
-						addCoin(feedData['deviceid'],parseInt(feedData['point'],10),callback);
+						addCoin(fd.fd_user,fd.fd_device,fd.fd_coin,fd.fd_adname,callback);
 					}
 				});
 			}
@@ -197,24 +233,46 @@ exports.scoreFromDianru = function(feedData,callback){
 
 }
 
-var validateAarki = function(feedData,callback){
-	var params = feedData['transaction_id'] + feedData['user_id'] + feedData['reward'];
-	console.log(sha1(params));
-	return feedData['sha1_signature'] == sha1(params);
+var validateCoco = function(fd,secretKey){
+	console.log(fd);
+	var keys = []
+	for (k in fd)
+	{
+		if (k!='sign' && fd.hasOwnProperty(k) && fd[k]!=null)
+		{
+			keys.push(k);
+		}
+	}
 
+	keys.sort();
+
+	var sign = fd['sign'];
+
+	var len = keys.length;
+	var kvs = "";
+
+	for (var i=0; i< len; i++){
+		kvs += keys[i]+"="+encodeURIComponent(fd[keys[i]])+"&";
+	}
+	kvs += "secret="+secretKey;
+//	kvs += "secret="+"secretvalue";
+	console.log(kvs,sign,UT.md5(kvs));
+
+	return sign == UT.md5(kvs);
 }
 
-exports.scoreFromAarki = function(feedData,callback){
-	if(validateAarki(feedData,ST.AarkiSecretKey)){
-		score.findOne({transaction_id:feedData.transaction_id},function(e,o){
+exports.postbackCoco = function(fd,os,callback){
+	if(validateCoco(fd,ST.CocoSecret[os])){
+		fd = formatFeedData(fd,os,'Coco');	
+		score.findOne({transactionid:fd.transactionid,platform:fd.platform},function(e,o){
 			if(o){
 				callback('duplication feed');
 			}else{
-				score.insert(feedData,{safe: true},function(e,o){
+				score.insert(fd,{safe: true},function(e,o){
 					if(e){
 						callback('insert feed error');
 					}else{
-						addCoin(feedData['user_id'],parseInt(feedData['reward'],10),callback);
+						addCoin(fd.fd_user,fd.fd_device,fd.fd_coin,fd.fd_adname,callback);
 					}
 				});
 			}
@@ -226,4 +284,415 @@ exports.scoreFromAarki = function(feedData,callback){
 
 }
 
+
+var validateWanpu = function(fd,key){
+	var ks = fd.adv_id+fd.app_id+fd.key+fd.udid+fd.bill+fd.points+UT.rawurlencode(fd.activate_time)+fd.order_id+key;
+	console.log(ks,fd.wapskey,UT.md5(ks));
+	return fd.wapskey==UT.md5(ks).toUpperCase();
+}
+
+exports.postbackWanpu = function(fd,os,callback){
+	if(validateWanpu(fd,ST.WanpuSecret[os])){
+		fd = formatFeedData(fd,os,'Wanpu');	
+		score.findOne({order_id:fd.order_id,platform:fd.platform},function(e,o){
+			if(o){
+				callback('duplication feed');
+			}else{
+				score.insert(fd,{safe: true},function(e,o){
+					if(e){
+						callback('insert feed error');
+					}else{
+						if(fd.bill!="0" && fd.bill!="null" && fd.status == "1"){
+							addCoin(fd.fd_user,fd.fd_device,fd.fd_coin,fd.fd_adname,callback);
+						}else{
+							callback('error parameters');
+						}
+					}
+				});
+			}
+		});
+
+	}else{
+		callback('validate sign fail');
+	}
+
+}
+
+var validateYijifen = function(params,signed,secretKey){
+
+	sign = UT.md5(params+secretKey,secretKey);
+	console.log(params+secretKey,sign,signed);
+
+	return sign == signed;
+}
+
+
+exports.postbackYijifen = function(req,os,callback){
+	var fd = req.query;
+	var params = req.originalUrl.replace(req.path+"?","").replace("&sign="+fd.sign,""); 
+
+	if(validateYijifen(params,fd.sign,ST.YijifenKey[os])){
+		fd = formatFeedData(fd,os,'Yijifen');	
+		score.findOne({adId:fd.adId,platform:fd.platform},function(e,o){
+			if(o){
+				callback('duplication feed');
+			}else{
+				score.insert(fd,{safe: true},function(e,o){
+					if(e){
+						callback('insert feed error');
+					}else{
+						addCoin(fd.fd_user,fd.fd_device,fd.fd_coin,fd.fd_adname,function(e,o){
+							callback(e,fd.eventId+":OK");
+						});
+					}
+				});
+			}
+
+		});
+	}else{
+		callback('error signature');
+	}
+
+}	
+
+var validateAarki = function(fd,key){
+	var params = fd['transaction_id'] + fd['user_id'] + fd['reward']+key;
+	console.log(params,UT.sha1(params));
+
+	return fd['sha1_signature'] == UT.sha1(params);
+
+}
+
+exports.postbackAarki = function(fd,os,callback){
+	if(validateAarki(fd,ST.AarkiSecret[os])){
+		fd = formatFeedData(fd,os,'Aarki');	
+		score.findOne({transaction_id:fd.transaction_id,platform:fd.platform},function(e,o){
+			if(o){
+				callback('duplication feed');
+			}else{
+				score.insert(fd,{safe: true},function(e,o){
+					if(e){
+						callback('insert feed error');
+					}else{
+						addCoin(fd.fd_user,fd.fd_device,fd.fd_coin,fd.fd_adname,callback);
+					}
+				});
+			}
+		});
+
+	}else{
+		callback('validate sign fail');
+	}
+
+}
+var validateTokenads = function(hash,signed,key){
+	console.log(hash+key,signed,UT.md5(hash+key));
+
+	return signed == UT.md5(hash+key);
+
+}
+
+exports.postbackTokenads = function(fd,os,callback){
+	if(validateTokenads(fd.hash,fd.sign,ST.TokenadsKey[os])){
+		fd = formatFeedData(fd,os,'Tokenads');	
+		score.findOne({transaction_id:fd.transaction_id,platform:fd.platform},function(e,o){
+			if(o){
+				callback('duplication feed');
+			}else{
+				score.insert(fd,{safe: true},function(e,o){
+					if(e){
+						callback('insert feed error');
+					}else{
+						addCoin(fd.fd_user,fd.fd_device,fd.fd_coin,fd.fd_adname,callback);
+					}
+				});
+			}
+		});
+
+	}else{
+		callback('validate sign fail');
+	}
+
+}
+
+
+	
+exports.postbackNativeX = function(fd,os,callback){
+	fd = formatFeedData(fd,os,'NativeX');	
+	console.log(fd);
+	score.findOne({fd_user:fd.fd_user,OfferId:fd.OfferId,platform:fd.platform},function(e,o){
+		if(o){
+			callback('duplication feed');
+		}else{
+			score.insert(fd,{safe: true},function(e,o){
+				if(e){
+					callback('insert feed error');
+				}else{
+					addCoin(fd.fd_user,fd.fd_device,fd.fd_coin,fd.fd_adname,callback);
+				}
+			});
+		}
+	});
+
+}
+var validateSupersonic = function(fd,key){
+	var params = fd.timestamp+fd.eventId+fd.appUserId+fd.rewards+key;
+	console.log("supper sonic sign:"+fd.signature+" vs "+UT.md5(params));
+	return fd.signature == UT.md5(params);
+}
+exports.postbackSupersonic = function(fd,os,callback){
+	if(validateSupersonic(fd,ST.SupperSonicKey[os])){
+		fd = formatFeedData(fd,os,'Supersonic');		
+		score.findOne({event_id:fd.eventId,platform:fd.platform},function(e,o){
+			if(o){
+				callback('duplication feed');
+			}else{
+				score.insert(fd,{safe: true},function(e,o){
+					if(e){
+						callback('insert feed error');
+					}else{
+						addCoin(fd.fd_user,fd.fd_device,fd.fd_coin,fd.fd_adname,function(e,o){
+							callback(e,fd.eventId+":OK");
+						});
+					}
+				});
+			}
+
+		});
+	}else{
+		callback('error signature');
+	}
+
+}	
+
+var validateTrialpay = function(params,signed,secretKey){
+
+	sign = UT.hmacMD5(params,secretKey);
+	console.log(params,sign,signed);
+
+	return sign == signed;
+}
+
+
+exports.postbackTrialpay = function(req,os,callback){
+	var fd = req.query;
+	var params = req.originalUrl.replace(req.path+"?",""); 
+	var signed = req.headers['trialpay-hmac-md5'];
+
+	if(validateTrialpay(params,signed,ST.TrialpayKey[os])){
+		fd = formatFeedData(fd,os,'Trialpay');	
+		score.findOne({oid:fd.oid,platform:fd.platform},function(e,o){
+			if(o){
+				callback('duplication feed');
+			}else{
+				score.insert(fd,{safe: true},function(e,o){
+					if(e){
+						callback('insert feed error');
+					}else{
+						addCoin(fd.fd_user,fd.fd_device,fd.fd_coin,fd.fd_adname,function(e,o){
+							callback(e,fd.eventId+":OK");
+						});
+					}
+				});
+			}
+
+		});
+	}else{
+		callback('error signature');
+	}
+
+}	
+
+var validatePlayerize = function(fd,key){
+	var kvs = fd['id']+":"+fd['new']+";"+fd['uid']+":"+key;
+	var sign = fd['sig'];
+	console.log("sign:",UT.md5(kvs));
+	return sign == UT.md5(kvs);
+}
+
+exports.postbackPlayerize = function(fd,os,callback){
+	if(validatePlayerize(fd,ST.PlayerizeKey[os])){
+		fd = formatFeedData(fd,os,'Playerize');	
+		score.findOne({id:fd.id,platform:fd.platform},function(e,o){
+			if(e){
+				callback(e);
+			}else if(o){
+				callback('duplication feed');
+			}else{
+				score.insert(fd,{safe: true},function(e,o){
+					if(e){
+						callback('insert feed error');
+					}else{
+						addCoin(fd.fd_user,fd.fd_device,fd.fd_coin,fd.fd_adname,callback);
+					}
+				});
+			}
+
+		})
+	}else{
+		callback('error signature');
+	}
+}	
+
+var validateFyber = function(fd,key){
+	var kvs = key+fd['user_id']+fd['amount']+fd["_trans_id_"];
+	var sign = fd['sid'];
+	console.log("sign:",UT.sha1(kvs));
+	return sign ==UT.sha1(kvs);
+}
+exports.postbackFyber = function(fd,callback){
+	if(validateFyber(fd,ST.FyberKey)){
+		fd = formatFeedData(fd,os,'Fyber');	
+		score.findOne({trans_id:fd._trans_id_,platform:fd.platform},function(e,o){
+			if(o){
+				callback('duplication feed');
+			}else{
+
+				score.insert(fd,{safe: true},function(e,o){
+					if(e){
+						callback('insert feed error');
+					}else{
+						addCoin(fd.fd_user,fd.fd_device,fd.fd_coin,fd.fd_adname,callback);
+					}
+				});
+			}
+
+		})
+	}else{
+		callback('error signature');
+	}
+
+}	
+
+var nameMap = {
+	Limei:{
+		fd_user:'user',
+		fd_device:'adi',
+		fd_coin:'point',
+		fd_adname:'adname'
+		},
+	Duomeng:{
+		fd_user:'user',
+		fd_device:'device',
+		fd_coin:'point',
+		fd_adname:'adname'
+		},
+	Miidi:{
+		fd_user:'user',
+		fd_device:'imei',
+		fd_coin:'cash',
+		fd_adname:'appName'
+		},
+	Dianru:{
+		fd_user:'userid',
+		fd_device:'device',
+		fd_coin:'point',
+		fd_adname:'adname'
+		},
+	Coco:{
+		fd_user:'token',
+		fd_device:'idfa',
+		fd_coin:'coins',
+		fd_adname:'adtitle'
+		},
+	Wanpu:{
+		fd_user:'user',
+		fd_device:'udid',
+		fd_coin:'points',
+		fd_adname:'ad_name'
+		},
+	Yijifen:{
+		fd_user:'userID',
+		fd_device:'idfa',
+		fd_coin:'score',
+		fd_adname:'adName'
+		},
+	Aarki:{
+		fd_user:'user_id',
+		fd_device:'idfa',
+		fd_coin:'reward',
+		fd_adname:'offer_id'
+		},
+	Tokenads:{
+		fd_user:'uid',
+		fd_device:'idfa',
+		fd_coin:'award',
+		fd_adname:'adName'
+		},
+	Playerize:{
+		fd_user:'uid',
+		fd_device:'device',
+		fd_coin:'new',
+		fd_adname:'adname'
+		},
+	Supersonic:{
+		fd_user:'appUserId',
+		fd_device:'device',
+		fd_coin:'rewards',
+		fd_adname:'adname'
+		},
+	NativeX:{
+		fd_user:'publisherUserId',
+		fd_device:'device',
+		fd_coin:'devicePayoutInCurrency',
+		fd_adname:'offerName'
+		},
+	Trialpay:{
+		fd_user:'userid',
+		fd_device:'device',
+		fd_coin:'reward_amount',
+		fd_adname:'adname'
+		},
+	Fyber:{
+		fd_user:'user_id',
+		fd_device:'device',
+		fd_coin:'amount',
+		fd_adname:'adname'
+	}
+};
+var formatFeedData = function(fd,os,platform){
+	fd.platform = platform;
+	fd.fd_time = moment().unix();
+	switch(platform){
+		case 'Miidi':
+			fd.imei = fd.imei.toUpperCase(); 
+			break;
+		case 'Wanpu':
+			fd.udid = fd.udid.toUpperCase();
+			break;
+		case 'NativeX':
+			if(os=='android'){
+				fd.device = fd.androidDeviceId || fd.androidIDFA;
+			}else{
+				fd.device = fd.iosIDFA;
+			}
+			delete fd['androidIDFA'];
+			delete fd['androidDeviceId'];
+			delete fd['iosIDFA'];
+			break;
+	}
+	var user   = nameMap[platform].fd_user;
+	var device = nameMap[platform].fd_device;
+	var coin   = nameMap[platform].fd_coin;
+	var adname = nameMap[platform].fd_adname;
+	
+	if(fd[user]){
+		fd.fd_user = fd[user];
+		delete fd[user];
+	}
+	if(fd[device]){
+		fd.fd_device = fd[device];
+		delete fd[device];
+	}
+	if(fd[coin]){
+		fd.fd_coin = parseInt(fd[coin],10);;
+		delete fd[coin];
+	}
+	fd.fd_adname = '';
+	if(fd[adname]){
+		fd.fd_adname = fd[adname];
+		delete fd[adname];
+	}
+	return fd;
+}
 

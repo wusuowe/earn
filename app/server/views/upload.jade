@@ -1,0 +1,21 @@
+extends layout
+block content
+    form#fileUpload(action="/admin/upload",method='post',enctype='multipart/form-data')
+        input(type="hidden",name="img_name",value=name)
+        input(type="hidden",name="img_src",value=src)
+        label(for='payload') Select a file to upload:
+        input#payload(type='file',name='myFile',accept='image/*')
+        //input(name="filename",type='text',value='hhhh')
+        br
+        button#upload 上传
+    button(onclick="closeSelf();") 使用该图片
+
+block scripts
+    script.
+        function closeSelf(){
+            //alert(document.getElementById("img_name").value);
+            //alert(document.getElementsByName("img_name")[0].value+":"+document.getElementsByName("img_src")[0].value);
+            parent.setImg(document.getElementsByName("img_name")[0].value,document.getElementsByName("img_src")[0].value);
+            var index = parent.layer.getFrameIndex(window.name);
+            parent.layer.close(index);            
+        }     

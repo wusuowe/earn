@@ -1,0 +1,60 @@
+
+extends main
+
+block content
+	br
+	div
+		input(type="radio", name="status", value="create",onclick="javascript:selExchange(this.value);",checked=status=="create") 
+		| 新创建
+		input(type="radio", name="status", value="complete",onclick="javascript:selExchange(this.value);",checked=status=="complete")
+		| 已完成
+		input(type="radio", name="status", value="delete",onclick="javascript:selExchange(this.value);",checked=status=="delete")
+		| 已删除
+	br
+	-var p = parseInt(page);
+	-var pre  = (p>0)?(p-1):0;
+	-var next = p+1;
+	-var k = " 第 "+p+" 页 ";
+	tr
+		td
+			a(href="?status="+status+"&page="+pre)
+				button 上一页
+		td=k
+		td		
+			a(href="?status="+status+"&page="+next)
+				button 下一页
+
+	div.div-table
+		div.div-table-row
+			div.div-table-col 用户
+			div.div-table-col 兑换标的
+			div.div-table-col 数量
+			div.div-table-big-col 姓名/地区
+			div.div-table-big-col 帐户
+			div.div-table-mid-col 日期
+			div.div-table-col 状态
+			div.div-table-col 操作
+			div.div-table-col 操作
+
+		each item in exchanges
+			div.div-table-row
+				input(type="hidden",name="id",value=item._id)
+				div.div-table-col
+					button(id=item.user_id,type="button",style="width:60px;",onclick="javascript:userStat(this);")=item.user_id
+				div.div-table-col=item.type
+				div.div-table-col=item.num
+				div.div-table-big-col=item.name
+				div.div-table-big-col=item.desc
+				div.div-table-mid-col=item.date
+				div.div-table-col=item.status
+				div.div-table-col
+					button(id="complete",type="button",style="width:60px;",value=item._id) 完成
+				div.div-table-col
+					button(id="delete",type="button",style="width:60px;",value=item._id) 删除
+
+block scripts
+	script(src='/vendor/jquery.min.js').
+	script(src='/vendor/jquery.form.js').
+	script(src='/js/util/exchange.js').
+	script(src="/vendor/layer.min.js").
+	script(src='/js/views/layers.js').

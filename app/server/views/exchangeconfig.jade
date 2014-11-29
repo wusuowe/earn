@@ -1,0 +1,65 @@
+
+extends main
+
+block content
+    #login-container
+        -for(var i=0; i<config.length; i++){
+            form( method="post")#login-form.well.span4
+                input(type="hidden", name="index", value=i)
+                div
+                    label 种类
+                    input(type="text", name="type", value=config[i].type)
+                div
+                    label 标题    
+                    input(type="text", name="title", value=config[i].title)
+                div
+                    label 规则
+                div
+                    -for(var k=0; k<config[i].rule.length; k++){
+                        -var pic="pic_"+i+"_"+k;    
+                        -var path="path_"+i+"_"+k;
+                        div
+                            label 数量    
+                            input(type="text", name="num", value=config[i].rule[k].num)
+                        div
+                            label 金币    
+                            input(type="text", name="coin", value=config[i].rule[k].coin)
+                        div
+                            label 单位
+                            input(type="text", name="unit", value=config[i].rule[k].unit)
+                        div
+                            label 图片显示
+                            input(type="checkbox", name="show_pic", checked=config[i].rule[k].show_pic)
+                        div
+                            label 图片
+                            input(id=path,type="hidden", name="picture", value=config[i].rule[k].picture)
+                            img(id=pic,src=config[i].rule[k].picture, onclick="javascript:loadImg(this);")
+
+    
+                    -}
+
+        
+                button(type="submit")#btn-login.btn.btn-primary
+                    i.icon-lock.icon-white
+                    | 确定
+        -}
+
+block scripts
+    script(src='/vendor/jquery.min.js').
+    script(src='/vendor/jquery.form.js').
+    script(src='/vendor/bootstrap-modal.js').
+    script(src='/vendor/bootstrap-transition.js').
+    script(src="/vendor/layer.min.js").
+    script(src='/js/views/layers.js').
+    script.
+        function loadImg(elm){
+        uploadWin(elm);}
+        function setImg(pic,src){
+            var path = pic.replace('pic','path');
+            $("#"+path).val(src);
+            $("#"+pic).attr('src',src);
+        }
+
+
+    
+

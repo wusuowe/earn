@@ -1,0 +1,39 @@
+
+extends main
+
+block content
+	#account-form-container
+		form(method="post",action="/admin/push/message")#account-form.form-horizontal.well.span6
+				h1
+				p#sub1.subheading 消息推送.
+				hr
+				fieldset
+					#name-cg.control-group
+						label.control-label(for='name-tf') 用户
+						.controls
+							input#name-tf.input-xlarge(type='text', name='user_id')
+					#email-cg.control-group
+						label.control-label(for='email-tf') 消息
+						.controls
+							input#email-tf.input-xlarge(type='text', name='message')
+					hr
+					button(type="submit")#btn-login.btn.btn-primary
+						i.icon-lock.icon-white
+						| 确定
+	
+		form(method="post",action="/admin/broadcast")#account-form.form-horizontal.well.span6
+				h1
+				p#sub1.subheading 跑马灯消息广播.
+				hr
+				fieldset
+					#email-cg.control-group
+						label.control-label(for='email-tf') 消息
+						.controls
+							input#email-tf.input-xlarge(type='text', name='message')
+					hr
+					button(type="submit")#btn-login.btn.btn-primary
+						i.icon-lock.icon-white
+						| 确定
+	
+
+

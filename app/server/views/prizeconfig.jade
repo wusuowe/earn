@@ -1,0 +1,38 @@
+
+extends main
+
+block content
+	#login-container
+		form( method="post")#login-form.well.span4
+			label 注册 
+			input(type="text", name="register", value=config.register)
+			label 签到 
+			-for (var i=0; i<config.sign.length; i++){
+				input(type="text", name="sign", value=config.sign[i])
+			-}
+			
+			label 分享
+			input(type="text", name="share", value=config.share)
+			label 拜师
+			input(type="text", name="recruit", value=config.recruit)
+			label 分成比率
+			-for (var i=0; i<config.boss.length; i++){ 
+				p num	
+				input(type="text", name="boss_num", value=config.boss[i][0])
+				p ratio
+				input(type="text", name="boss_ratio", value=config.boss[i][1])
+			-}
+
+			button(type="submit")#btn-login.btn.btn-primary
+				i.icon-lock.icon-white
+				| 确定
+
+block scripts
+	script(src='/vendor/jquery.min.js').
+	script(src='/vendor/jquery.form.js').
+	script(src='/vendor/bootstrap-modal.js').
+	script(src='/vendor/bootstrap-transition.js').
+
+
+	
+

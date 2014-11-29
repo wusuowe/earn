@@ -1,0 +1,64 @@
+
+extends main
+
+block content
+	br
+	div
+		input(type="radio", name="status", value="create",onclick="javascript:selWish(this.value);",checked=status=="create") 
+		| 待审核
+		input(type="radio", name="status", value="confirm",onclick="javascript:selWish(this.value);",checked=status=="confirm")
+		| 审核通过
+		input(type="radio", name="status", value="complete",onclick="javascript:selWish(this.value);",checked=status=="complete")
+		| 已兑换
+		input(type="radio", name="status", value="delete",onclick="javascript:selWish(this.value);",checked=status=="delete")
+		| 已删除
+	br
+	-var p = parseInt(page);
+	-var pre  = (p>0)?(p-1):0;
+	-var next = p+1;
+	-var k = " 第 "+p+" 页 ";
+	tr
+		td
+			a(href="?status="+status+"&page="+pre)
+				button 上一页
+		td=k
+		td		
+			a(href="?status="+status+"&page="+next)
+				button 下一页
+
+
+	div.div-table
+		div.div-table-row
+			div.div-table-col 用户
+			div.div-table-big-col 意愿物
+			div.div-table-col 状态
+			div.div-table-col 价格($/￥)
+			div.div-table-col 折扣
+			div.div-table-col 运费($/￥)
+			div.div-table-col 操作
+			div.div-table-col 操作
+
+		each item in wishes
+			div.div-table-row
+				div.div-table-col
+					button(id=item.user_id,type="button",style="width:60px;",onclick="javascript:userStat(this);")=item.user_id
+				div.div-table-big-col=item.desc
+				div.div-table-col=item.status
+				div.div-table-col(id="price")
+					input(type="text",style="width:60px;height:12px")
+				div.div-table-col(id="discount")
+					input(type="text",style="width:60px;height:12px",value="8.0")
+				div.div-table-col(id="freight")
+					input(type="text",style="width:60px;height:12px",value="10")
+				div.div-table-col
+					button(id="confirm",type="button",style="width:60px;",value=item._id) 确定
+				div.div-table-col
+					button(id="delete",type="button",style="width:60px;",value=item._id) 删除
+				
+
+block scripts
+	script(src='/vendor/jquery.min.js').
+	script(src='/vendor/jquery.form.js').
+	script(src="/vendor/layer.min.js").
+	script(src='/js/views/wish.js').
+	script(src='/js/views/layers.js').

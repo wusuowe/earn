@@ -1,106 +1,26 @@
 var crypto      = require('crypto');
-var MongoDB     = require('mongodb').Db;
-var Server      = require('mongodb').Server;
 var moment      = require('moment');
 var UT      = require('./utility');
 
 var ST = require('./setting');
-var dbPort      = ST.dbPort;
-var dbHost      = ST.dbHost;
-var dbName      = ST.dbName;
-var devServerSecret = ST.devServerSecret;
-
-var db = new MongoDB(dbName, new Server(dbHost, dbPort, {auto_reconnect: true}), {w: 1});
-var scratchFile = 'config/scratch-off.json';
-var slyderFile = 'config/slyder.json';
-var lotteryFile = 'config/lottery.json';
-
-
-db.open(function(e, d){
-	if (e) {
-		console.log(e);
-	}   else{
-		console.log('connected to database :: ' + dbName);
-	}
-});
+var db = require('./database').db;
 
 var scratch = db.collection('scratch');
 var account = db.collection('account');
 var slyder = db.collection('slyder');
+var codeDb = db.collection('codes');
 var lottery = db.collection('lottery');
-
-var scratchConfig;
-//var slyderConfig;
-var lotteryConfig;
-
-loadScratchConfig(scratchFile,function(e,o){});
-loadSlyderConfig(slyderFile,function(e,o){});
-loadLotteryConfig(lotteryFile,function(e,o){});
-
-function loadScratchConfig(filename,callback){
-	var fs = require('fs');
-	var file = __dirname +'/' +filename;
-
-	fs.readFile(file, 'utf8', function (err, data) {
-		if (err) {
-			console.log('Error: ' + err);
-			callback(err,null);
-		}else{
-			var config = JSON.parse(data);
-			preProcessPool(config);
-			scratchConfig = config;
-			console.log(scratchConfig);	
-			callback(null,null);
-		}
-	});
-}
-
-
-function loadSlyderConfig(filename,callback){
-	var fs = require('fs');
-	var file = __dirname +'/' +filename;
-
-	fs.readFile(file, 'utf8', function (err, data) {
-		if (err) {
-			console.log('Error: ' + err);
-			callback(err,null);
-		}else{
-			var config = JSON.parse(data);
-			preProcessPool(config);
-			slyderConfig = config;		
-			console.log(slyderConfig);
-			callback(null,null);
-		}
-	});
-}
-
-function loadLotteryConfig(filename,callback){
-	var fs = require('fs');
-	var file = __dirname +'/' +filename;
-
-	fs.readFile(file, 'utf8', function (err, data) {
-		if (err) {
-			console.log('Error: ' + err);
-			callback(err,null);
-		}else{
-			var config = JSON.parse(data);
-			lotteryConfig = config;
-			console.log(lotteryConfig);
-			callback(null,null);
-		}
-	});
-}
 
 
 var rnd = function(start, end){
 	    return Math.floor(Math.random() * (end - start) + start);
 };
 
-var rand = function(callback){
-	var n = rnd(10000000,100000000);
-	lottery.findOne({code:n},function(e,o){
+var rand6 = function(callback){
+	var n = rnd(100000,1000000);
+	codeDb.findOne({code:n},function(e,o){
 		if(o){
-			rand(callback);
+			rand6(callback);
 		}else{
 			callback(n);
 		}
@@ -108,25 +28,6 @@ var rand = function(callback){
 
 }
 
-
-function calcMinNum(base,pool,ratio,min){
-	var sum = 0;
-	var num = 0;
-	for (k in pool){
-		sum += k * pool[k];
-		num += pool[k];
-	}
-	if (sum / num > base){
-		return Math.ceil((sum-ratio*base*num)/(ratio*base-min));
-	}else{
-		return 0;
-	}
-
-}
-
-function preProcessPool(config){
-	config.pool[config.min] = calcMinNum(config.base,config.pool,config.ratio,config.min);
-}
 
 
 function draw(pool){
@@ -155,31 +56,42 @@ function initResult(pool){
 }
 
 
-exports.reloadScratchConfig = function(callback){
-	loadScratchConfig(scratchFile,callback);
-}
-
-exports.reloadSlyderConfig = function(callback){
-	loadSlyderConfig(slyderFile,callback);
-}
-
-exports.reloadLotteryConfig = function(callback){
-	loadLotteryConfig(lotteryFile,callback);
-}
 exports.scratch = function(userId,callback){
 
 
 	var config = scratchConfig;
 	var gameDb = scratch;
+/*
+	console.log(scratchConfig);
+	console.log(config);
 
+	var time = 100000;
+
+	var result = initResult(config.pool);
+
+	for (var i=0; i<time; i++){
+		var k = draw(config.pool);
+		result[k]++;
+	}
+
+	var total = 0;
+
+	for(k in result){
+		console.log(k,result[k]);
+		total += k*result[k];
+	}
+
+	console.log(total,time*config.base,total/(time*config.base));
+
+*/
 	account.findOne({user_id:userId},function(e,o){
 		if(e){
-			callback('access db error '+e,0);
+			callback('access database error '+e,0);
 		}else if(!o){
-			callback('no user found',0);
+			callback('User is not existing.',0);
 		}else{
 			if(o.coin==undefined ||  o.coin < config.base){
-				callback('no enough coin',0);
+				callback('no enough zeen',0);
 			}else{
 				var coins = parseInt(draw(config.pool));
 				var balance = o.coin - config.base + coins;
@@ -187,7 +99,7 @@ exports.scratch = function(userId,callback){
 					if(e){
 						callback('update account error '+e ,0);
 					}else{
-						UT.log(userId,'earn','scratch',-config.base,coins);
+						UT.log(userId,'earn','scratch',coins,config.base);
 						gameDb.insert({user_id:userId,coin:coins,time:moment().unix()},{safe:true},function(e){
 							if(e){
 								callback('write log error',0);
@@ -233,26 +145,29 @@ exports.slyder = function(userId,callback){
 */
 	account.findOne({user_id:userId},function(e,o){
 		if(e){
-			callback('access db error '+e,0);
+			callback('access database error '+e);
 		}else if(!o){
-			callback('no user found',0);
+			callback('User is not existing.');
 		}else{
 			if(o.coin==undefined ||  o.coin < config.base){
-				callback('no enough coin',0);
+				callback('no enough zeen');
 			}else{
 				var coins = parseInt(draw(config.pool));
 				var pos = config.postion[coins.toString()];
+			//	console.log("xxx",config.postion,coins.toString(),pos);
 				var balance = o.coin - config.base + coins;
 				account.update({user_id:userId},{$set:{coin:balance},$inc:{total_coin:coins}},{w:1},function(e,o){
 					if(e){
-						callback('update account error '+e ,0);
+						callback('update account error '+e);
 					}else{
-						UT.log(userId,'earn','slyder',-config.base,coins);
+						UT.log(userId,'earn','slyder',coins,config.base);
 						gameDb.insert({user_id:userId,coin:coins,time:moment().unix()},{safe:true},function(e){
 							if(e){
-								callback('write log error',0);
+								callback('write log error');
+					//			console.log('write log error');
 							}else{
-								callback(null,{"position":pos});
+					//			console.log({"position":pos});
+								callback(null,{"position":pos,"coin":coins});
 							}
 						});
 
@@ -265,31 +180,32 @@ exports.slyder = function(userId,callback){
 
 exports.lottery = function(userId,callback){
 	var config = lotteryConfig;
+	var time = moment().unix();
+	if(time > moment(config.open_date).unix()){
+		callback('this lottery has closed');
+		return;
+	}
 
 	account.findOne({user_id:userId},function(e,o){
 		if(e){
-			callback('access db error '+e,0);
+			callback('access database error '+e);
 		}else if(!o){
-			callback('no user found',0);
+			callback('User is not existing.');
 		}else{
 			if(o.coin==undefined || o.coin < config.base){
-				callback('no enough coin',0);
+				callback('no enough zeen');
 			}else{
 				var balance = o.coin - config.base;
 				account.update({user_id:userId},{$set:{coin:balance}},{w:1},function(e,o){
 					if(e){
-						callback('update account error '+e ,0);
+						callback('update account error '+e);
 					}else{
-						rand(function(code){
-							UT.log(userId,'earn','lottery',-config.base,'');
-							lottery.insert({no:config.no,user_id:userId,code:code,open_date:moment(config.open_date).unix()},{safe:true},function(e){
-								if(e){
-									callback('write log error',0);
-								}else{
-									callback(null,code);
-								}
-							});
+						rand6(function(code){
+						//	UT.log(userId,'earn','lottery',-config.base,'');
+							codeDb.insert({no:config.no,user_id:userId,code:code,time:moment().unix()},{safe:true},function(e,o){
+							callback(e,"")});
 						});
+						UT.log(userId,'lottery','',0,config.base);
 
 					}
 				});
@@ -300,20 +216,22 @@ exports.lottery = function(userId,callback){
 }
 
 exports.lotteryCount = function(callback){
-	var config = lotteryConfig;
-	lottery.count({no:config.no},function(e,o){
-		if(e || !o){
-			config.count = 0;
-		}else{
-			config.count = o;
-		}
+	var c = lotteryConfig;
+	codeDb.count({no:c.no},function(e,o){
+		var config = {
+			"no":c.no,
+			"open_date":c.open_date,
+			"base":c.base,
+			"winner_num":c.winner_num,
+			"count":c.count+o
+		};
 		callback(e,config);
 	});
 
 }
 
-exports.lotteryCodes = function(userId,callback){
-	lottery.find({user_id:userId},function(e,docs){
+exports.lotteryCode = function(userId,callback){
+	codeDb.find({user_id:userId},function(e,docs){
 		if(e){
 			callback(e,null);
 		}else{
@@ -322,12 +240,109 @@ exports.lotteryCodes = function(userId,callback){
 	});
 
 }
+var lotteryList = null;
+function loadLotteryList(reload,callback){
+	//console.log(lotteryList,reload,(lotteryList || reload));
+	if(!lotteryList || reload){
+		lottery.find({},{sort:{time:-1},limit:10},function(e,docs){
+			if(e||!docs){
+				callback(e,docs);
+			}else{
+				lotteryList ={};
+				docs.toArray(function(e,record){
+					record.forEach(function(rec){
+						lotteryList[rec.no] = rec;
+					});					
+				});
+
+				callback(lotteryList);
+			}
+		});
+	}else{
+		callback(lotteryList);
+	}
+}
+
+exports.lotteryOpen = function(callback){
+	if(moment().unix() < moment(lotteryConfig.open_date).unix()){
+		callback('Lottery is still open.');
+	}else{
+		lottery.findOne({no:lotteryConfig.no},function(e,o){
+			if(o.opened){
+				callback('Finished');
+			}else{
+				codeDb.find({no:lotteryConfig.no},{_id:0,code:1},function(e,cs){
+					var winners = [];
+					cs.toArray(function(e,codeArray){
+						for(var i=0; i< lotteryConfig.winner_num; i++){
+							var index = UT.rand(0,codeArray.length);
+							winners.push(codeArray[index]);
+						}
+					//	console.log({no:lotteryConfig.no},{$set:{winner:winners,opened:true}});
+						lottery.update({no:lotteryConfig.no},
+							{$set:{winner:winners,opened:true}},
+							{safe:true},function(e,o){
+								callback(e,winners);
+							});
+
+					});
+				});
+
+				UT.alertAll(alertConfig.lottery_open);
+				
+			}
+
+		});
+	}
+}
+
+exports.lotteryCodes = function(userId,page,callback){
+	var limit = 20;
+	var start = page*limit;
+	codeDb.find({user_id:userId},{_id:0},{sort:{time:-1},skip:start,limit:limit},function(e,docs){
+		if(e || !docs){
+			callback(e,docs);
+		}else{
+			loadLotteryList(false,function(lotteryList){
+				docs.toArray(function(e,codes){
+					//console.log("codes:",codes,"\nlolist",lotteryList);
+					var ret = [];
+					var lastCode="";
+					var num = 0;
+
+					codes.forEach(function(code){
+					//	console.log(ret);
+						if(lastCode!=code.no){
+							lastCode = code.no;
+							num++;
+							ret.push({
+								"no":code.no,
+								"title":lotteryList[code.no].display.title,
+								"winner":lotteryList[code.no].winner,
+								"codes":[{"code":code.code,"time":moment(code.time*1000).format('YYYY-MM-DD')}]
+							});
+						}else{
+							ret[num-1].codes.push({"code":code.code,"time":moment(code.time*1000).format('YYYY-MM-DD')});
+						}
+
+					});
+					callback(e,ret);
+				});
+			});
+		}
+	});
+
+}
+
 
 exports.getGameDesc = function(callback){
-	var config = {
+	callback(null,{
 		'lottery':lotteryConfig.display,
 		'scratch':scratchConfig.display,
-		'slyder':slyderConfig.display
-	};
-	callback(null,config);
+		'slyder':slyderConfig.display,
+		'new_game':newGameConfig.display
+		});
+
+
+
 }

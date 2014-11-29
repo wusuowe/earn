@@ -16,7 +16,12 @@ var async = require('async');
 
 /* establish the database connection */
 
+console.log(moment(1414403336));
+
 console.log(moment("2014-09-20").unix());
+
+console.log("du",moment(1411958509).fromNow());
+console.log("du",moment(1411958509*1000).fromNow());
 
 
 var rnd = function(start, end){

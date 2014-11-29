@@ -1,0 +1,37 @@
+
+extends list
+
+block content
+	br
+	-var p = parseInt(page);
+	-var pre  = (p>0)?(p-1):0;
+	-var next = p+1;
+	div
+		a(href=base+"&page="+pre)
+			button 上一页
+		a(href=base+"&page="+next)
+			button 下一页
+	div.div-table
+		div.div-table-row
+			div.div-table-col 用户
+			div.div-table-col 平台
+			div.div-table-col 金币 
+			div.div-table-mid-col 回传时间	
+			div.div-table-big-col 任务名称
+
+		each item in offers
+			div.div-table-row
+				div(id=item.fd_user,onclick="javascript:userStat(this);").div-table-col
+					a=item.fd_user
+				div.div-table-col
+					a(href="/admin/offer/list?platform="+item.platform+"&page=0")=item.platform
+				div.div-table-col=item.fd_coin
+				div.div-table-mid-col=item.fd_time
+				div.div-table-big-col=item.fd_adname
+				
+block scripts
+	script(src='/vendor/jquery.min.js').
+	script(src='/vendor/jquery.form.js').
+	script(src="/vendor/layer.min.js").
+	script(src='/js/views/layers.js').
+

@@ -1,0 +1,33 @@
+!!! 5
+html
+	head
+		title 聚能赚管理系统
+		link(rel='stylesheet', href='/vendor/bootstrap.min.css')
+		link(rel='stylesheet', href='/css/style.css')
+		link(rel='stylesheet', href='/css/css4.1.css')
+	body
+		div(style="height:30px;background-color:#000")
+		div#nav1
+			li
+				a(href="/admin/home") 首页
+			li
+				a(href="/admin/list/exchange?status=create&page=0") 兑换管理
+			li
+				a(href="/admin/list/wish?status=create&page=0") 意愿物管理
+			li
+				a(href="/admin/exchange/config") 兑换配置
+			li
+				a(href="/admin/prize/config") 奖励配置	
+			li
+				a(href="/admin/kv/config") 常量设置
+			li
+				a(href="/admin/push/message") 推送服务	
+			li
+				a(href="/admin/statistic") 统计数据	
+			li
+				a(href="#") 刮刮卡
+			li
+				a(href="#") 抽奖
+
+	block content
+	block scripts

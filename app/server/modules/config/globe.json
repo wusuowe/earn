@@ -1,0 +1,115 @@
+{
+	"exchange":{
+		"QQ":{"2":200,"5":500,"10":1000},
+		"phone_card":{"20":2000,"30":3000,"50":5000,"100":10000},
+		"alipay":{"20":2000,"30":3000,"50":5000,"100":10000}
+	},
+	"lottery":{
+		"no":"20140912",
+		"open_date":"2014-09-20",
+		"base":50,
+		"winner_num":6,
+		"count":123,
+		"display":{
+			"cn":{
+				"cost":50,
+				"small_picture":"/static/img/small-lottery.png",
+				"large_picture":"/static/img/large-lottery.png",
+				"title":"iphone 6抽奖",
+				"rule":["每局只需50金币","共6部","9月20号公布结果，先到先得"],
+				"codes_title":"iphone"
+			},
+			"en":{
+				"cost":50,
+				"small_picture":"/static/img/small-lottery.png",
+				"large_picture":"/static/img/large-lottery.png",
+				"title": "Win an iPhone 6",
+				"rule": ["500 Mina to draw a lottery",
+				"6 iPhones in total",
+				"We will public the lucky guy at 9/20"],
+				"codes_title":"iphone"
+
+
+			}
+
+
+		}
+
+
+	},
+	"prize":{
+		"register":100,
+		"sign":[7,30,30,7,30,30,30],
+		"share":20,
+		"comment":50,
+		"boss":[[10,0.15],[50,0.2],[150,0.3],[300,0.4],[1000000,0.5]]
+
+	},
+	"scratch":{
+		"base":30,
+		"min":0,
+		"ratio":0.8,
+		"pool":{"5":40,"10":30,"15":20,"20":10,"25":10,"50":10,"100":10,"200":10,"300":5},
+		"picture":{"happy":"/static/img/happy.png","encourage":"/static/img/encourage.png"},	
+		"high_value":20,
+		"display":{
+			"cn":{
+				"cost":30,
+				"small_picture":"/static/img/small-scratch.png",
+				"large_picture":"/static/img/large-scratch.png",
+				"title":"刮刮卡",
+				"rule":["每局只需30金币","不限制次数","最高10倍奖励"]
+			},
+			"en":{
+				"cost": 30,
+				"small_picture": "/static/img/small-scratch.png",
+				"large_picture": "/static/img/large-scratch.png",
+				"title": "Scratch Card",
+				"rule": ["30 Mina for every scratch",
+				"No frequency of play",
+				"100% win Mina back, top prize is 300 Mina"]
+
+			}
+		}
+
+
+	},
+	"share":{
+		"android":{
+			"url":"http://android/download/link"
+		},
+		"ios":{
+			"url":"http://ios/download/link"
+
+		}
+	},
+	"slyder":
+	{
+		"min":1,
+		"base":30,
+		"ratio":0.8,
+		"pool":{"5":10,"10":10,"15":10,"20":10,"25":10,"50":10,"60":10,"80":10,"300":10,"600":10},
+		"postion":{"1":0,"5":1,"10":2,"15":3,"20":4,"25":5,"50":6,"100":7,"200":8,"300":9},
+		"picture":"/static/img/slyder.png",
+		"display":{
+			"cn":{
+				"cost":30,
+				"small_picture":"/static/img/small-slyder.png",
+				"large_picture":"/static/img/large-slyder.png",
+				"title":"大转盘",
+				"rule":["每局只需30金币","不限制次数","最高20倍奖励"]
+			},
+			"en":{
+				"cost": 30,
+				"small_picture": "/static/img/small-slyder.png",
+				"large_picture": "/static/img/large-slyder.png",
+				"title": "Wild Wheel",
+				"rule": ["30 Mina for every scratch",
+				"No frequency of play",
+				"Top prize is 600 Mina"	]
+
+			}
+		}
+
+	}
+}

@@ -1,0 +1,36 @@
+
+extends main
+
+block content
+	div(id="sample",style="display:none;")
+		div.div-table-row
+			div.div-table-big-col
+				input(type="text",name="key")
+			div.div-table-big-col
+				input(type="text",name="value",style="width:190px;")
+			div.div-table-col
+				button(id="delete",style="width:60px;") 删除	
+			div.div-table-col
+				button(id="save",style="width:60px;") 保存
+
+	div
+		form(method="post")
+			div.div-table(id="table")
+				-for(var k in kvs)
+					div.div-table-row
+						div.div-table-big-col
+							input(type="text",name="key",value=k)
+						div.div-table-big-col
+							input(type="text",name="value",value=kvs[k],style="width:190px;")
+						div.div-table-col
+							button(id="delete",style="width:60px;") 删除	
+						div.div-table-col
+							button(id="save",style="width:60px;") 保存
+	div
+		button(id="add") 增加新的键值对
+				
+
+block scripts
+	script(src='/vendor/jquery.min.js').
+	script(src='/vendor/jquery.form.js').
+	script(src='/js/util/kv.js').

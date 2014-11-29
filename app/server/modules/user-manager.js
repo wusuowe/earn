@@ -1,14 +1,16 @@
 var crypto 		= require('crypto');
+var db = require('./database').db;
+var moment = require('moment');
 
 /* establish the database connection */
 
-var user = db.collection('user');
+var userDb = db.collection('user');
 
 /* login validation methods */
 
 exports.autoLogin = function(user, pass, callback)
 {
-	user.findOne({user:user}, function(e, o) {
+	userDb.findOne({user:user}, function(e, o) {
 		if (o){
 			o.pass == pass ? callback(o) : callback(null);
 		}	else{
@@ -19,15 +21,15 @@ exports.autoLogin = function(user, pass, callback)
 
 exports.manualLogin = function(user, pass, callback)
 {
-	user.findOne({user:user}, function(e, o) {
+	userDb.findOne({user:user}, function(e, o) {
 		if (o == null){
-			callback('user-not-found');
+			callback('user not found');
 		}	else{
 			validatePassword(pass, o.pass, function(err, res) {
 				if (res){
 					callback(null, o);
 				}	else{
-					callback('invalid-password');
+					callback('invalid password');
 				}
 			});
 		}
@@ -38,11 +40,11 @@ exports.manualLogin = function(user, pass, callback)
 
 exports.addNewUser = function(newData, callback)
 {
-	user.findOne({user:newData.user}, function(e, o) {
+	userDb.findOne({user:newData.user}, function(e, o) {
 		if (o){
-			callback('username-taken');
+			callback('username has taken already');
 		}	else{
-			user.findOne({email:newData.email}, function(e, o) {
+			userDb.findOne({email:newData.email}, function(e, o) {
 				if (o){
 					callback('email-taken');
 				}	else{
@@ -50,7 +52,7 @@ exports.addNewUser = function(newData, callback)
 						newData.pass = hash;
 					// append date stamp when record was created //
 						newData.date = moment().format('MMMM Do YYYY, h:mm:ss a');
-						user.insert(newData, {safe: true}, callback);
+						userDb.insert(newData, {safe: true}, callback);
 					});
 				}
 			});
@@ -60,19 +62,19 @@ exports.addNewUser = function(newData, callback)
 
 exports.updateUser = function(newData, callback)
 {
-	user.findOne({user:newData.user}, function(e, o){
+	userDb.findOne({user:newData.user}, function(e, o){
 		o.name 		= newData.name;
 		o.email 	= newData.email;
 		o.country 	= newData.country;
 		if (newData.pass == ''){
-			user.save(o, {safe: true}, function(err) {
+			userDb.save(o, {safe: true}, function(err) {
 				if (err) callback(err);
 				else callback(null, o);
 			});
 		}	else{
 			saltAndHash(newData.pass, function(hash){
 				o.pass = hash;
-				user.save(o, {safe: true}, function(err) {
+				userDb.save(o, {safe: true}, function(err) {
 					if (err) callback(err);
 					else callback(null, o);
 				});
@@ -83,13 +85,13 @@ exports.updateUser = function(newData, callback)
 
 exports.updatePassword = function(email, newPass, callback)
 {
-	user.findOne({email:email}, function(e, o){
+	userDb.findOne({email:email}, function(e, o){
 		if (e){
 			callback(e, null);
 		}	else{
 			saltAndHash(newPass, function(hash){
 		        o.pass = hash;
-		        user.save(o, {safe: true}, callback);
+		        userDb.save(o, {safe: true}, callback);
 			});
 		}
 	});
@@ -104,19 +106,19 @@ exports.deleteUser = function(id, callback)
 
 exports.getUserByEmail = function(email, callback)
 {
-	user.findOne({email:email}, function(e, o){ callback(o); });
+	userDb.findOne({email:email}, function(e, o){ callback(o); });
 }
 
 exports.validateResetLink = function(email, passHash, callback)
 {
-	user.find({ $and: [{email:email, pass:passHash}] }, function(e, o){
+	userDb.find({ $and: [{email:email, pass:passHash}] }, function(e, o){
 		callback(o ? 'ok' : null);
 	});
 }
 
 exports.getAllRecords = function(callback)
 {
-	user.find().toArray(
+	userDb.find().toArray(
 		function(e, res) {
 		if (e) callback(e)
 		else callback(null, res)
@@ -167,7 +169,7 @@ var getObjectId = function(id)
 
 var findById = function(id, callback)
 {
-	user.findOne({_id: getObjectId(id)},
+	userDb.findOne({_id: getObjectId(id)},
 		function(e, res) {
 		if (e) callback(e)
 		else callback(null, res)
@@ -178,9 +180,12 @@ var findById = function(id, callback)
 var findByMultipleFields = function(a, callback)
 {
 // this takes an array of name/val pairs to search against {fieldName : 'value'} //
-	user.find( { $or : a } ).toArray(
+	userDb.find( { $or : a } ).toArray(
 		function(e, results) {
 		if (e) callback(e)
 		else callback(null, results)
 	});
 }
+
+
+

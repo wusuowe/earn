@@ -1,0 +1,104 @@
+
+extends list
+
+block content
+	div.div-table
+		div.div-table-row
+			div.div-table-mid-col 项目
+			div.div-table-mid-col 数值
+			div.div-table-mid-col 项目
+			div.div-table-mid-col 数值
+
+		div.div-table-row
+			div.div-table-mid-col 用户ID
+			div.div-table-mid-col=detail.user_id
+			div.div-table-mid-col 金币数目
+			div.div-table-mid-col=detail.coin
+		div.div-table-row
+			div.div-table-mid-col 注册时间
+			div.div-table-mid-col=detail.create_time
+			div.div-table-mid-col 注册奖励
+			div.div-table-mid-col=detail.create_sum		
+		div.div-table-row
+			div.div-table-mid-col 邀请码
+			div.div-table-mid-col
+				a(href="?user_id="+detail.ask_code)=detail.ask_code
+			div.div-table-mid-col 设邀请码奖励
+			div.div-table-mid-col=detail.recruit_sum
+		div.div-table-row
+			div.div-table-mid-col 签到次数 
+			div.div-table-mid-col=detail.sign_time
+			div.div-table-mid-col 签到奖励  
+			div.div-table-mid-col=detail.sign_sum
+		div.div-table-row
+			div.div-table-mid-col 分享次数
+			div.div-table-mid-col=detail.share_time
+			div.div-table-mid-col 分享奖励
+			div.div-table-mid-col=detail.share_sum
+		
+		div.div-table-row
+			div.div-table-mid-col 最近登陆时间
+			div.div-table-mid-col=detail.last_login
+			div.div-table-mid-col 登录地区/ip
+			div.div-table-mid-col=detail.location
+
+		-var show_status = (detail.status==-1)?"已禁用，点击开启":"正常，点击禁用";
+		-var next_status = (detail.status==-1)?0:-1;
+		div.div-table-row
+			div.div-table-mid-col 状态
+			div.div-table-mid-col
+				a(href="/admin/set/user/status?user_id="+detail.user_id+"&status="+next_status)=show_status
+			div.div-table-mid-col 游戏次数
+			div.div-table-mid-col=detail.game_time
+		
+		div.div-table-row
+			div.div-table-mid-col 游戏花费
+			div.div-table-mid-col=detail.game_cost
+			div.div-table-mid-col 游戏赚取
+			div.div-table-mid-col=detail.game_sum
+		
+		div.div-table-row
+			div.div-table-mid-col 抽奖次数
+			div.div-table-mid-col=detail.lottery_time
+			div.div-table-mid-col 抽奖花费
+			div.div-table-mid-col=detail.lottery_cost
+
+			
+		div.div-table-row
+			div.div-table-mid-col 返点次数
+			div.div-table-mid-col=detail.rebate_time
+			div.div-table-mid-col 返点金币数
+			div.div-table-mid-col=detail.rebate_sum
+
+		div.div-table-row
+			div.div-table-mid-col 兑换次数
+			div.div-table-mid-col=detail.exchange_time
+			div.div-table-mid-col 兑换金币数
+			div.div-table-mid-col=detail.exchange_sum
+		div.div-table-row
+			div.div-table-mid-col 徒弟数目
+			div.div-table-mid-col=detail.pupil_num
+			div.div-table-mid-col 
+			div.div-table-mid-col
+
+		div.div-table-row
+			div.div-table-mid-col 徒弟分成次数
+			div.div-table-mid-col=detail.pupil_earn_time
+			div.div-table-mid-col 徒弟分成金币
+			div.div-table-mid-col=detail.pupil_earn_sum
+
+		div.div-table-row
+			div.div-table-mid-col 完成任务次数
+			div.div-table-mid-col
+				a(href="/admin/offer/list?user_id="+detail.user_id+"&page=0")=detail.offer_time
+			div.div-table-mid-col 任务赚取金币
+			div.div-table-mid-col=detail.offer_sum
+		
+
+	
+
+		
+block scripts
+	script(src='/vendor/jquery.min.js').
+	script(src='/vendor/jquery.form.js').
+	script(src='/js/views/layers.js').

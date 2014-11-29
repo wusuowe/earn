@@ -1,0 +1,70 @@
+
+extends main
+
+block content
+	br
+	button(onclick="javascript:window.location.reload();") 点击刷新
+	br	
+	div.div-table
+		div.div-table-row
+			div.div-table-big-col 统计项目
+			div.div-table-col 数量
+			div.div-table-col 操作
+		
+		div.div-table-row
+			div.div-table-big-col 总用户数
+			div.div-table-col=usr.total_num
+			div.div-table-col
+				button(id="user",type="button",style="width:60px;",value="?page=0",onclick="javascript:userList(this);") 查看
+		div.div-table-row
+			div.div-table-big-col 今日新增用户数
+			div.div-table-col=usr.today_increment
+			div.div-table-col
+				button(id="user",type="button",style="width:60px;",value="?create_start_time=today&page=0",onclick="javascript:userList(this);") 查看
+		div.div-table-row
+			div.div-table-big-col 今日活跃用户数
+			div.div-table-col=usr.today_active
+			div.div-table-col
+				button(id="user",type="button",style="width:60px;",value="?active_start_time=today&page=0",onclick="javascript:userList(this);") 查看
+		div.div-table-row
+			div.div-table-big-col 完成任务总数
+			div.div-table-col=offer.total_num
+			div.div-table-col
+				button(id="offer",type="button",style="width:60px;",value='?page=0',onclick="javascript:offerList(this);") 查看
+		div.div-table-row
+			div.div-table-big-col 今日完成任务数
+			div.div-table-col=offer.today_increment
+			div.div-table-col
+				button(id="offer",type="button",style="width:60px;",value='?start_time=today&page=0',onclick="javascript:offerList(this);") 查看
+		div.div-table-row
+			div.div-table-big-col 推广点击总量
+			div.div-table-col=campaign.total_num
+			div.div-table-col
+				button(id="campaign",type="button",style="width:60px;",value='?page=0',onclick="javascript:offerList(this);",disabled="disabled") 查看
+		div.div-table-row
+			div.div-table-big-col 今日推广点击量
+			div.div-table-col=campaign.today_increment
+			div.div-table-col
+				button(id="campaign",type="button",style="width:60px;",value='?start_time=today&page=0',onclick="javascript:offerList(this);",disabled="disabled") 查看
+
+
+	div(id="list")
+
+		
+block scripts
+	script(src='/vendor/jquery.min.js').
+	script(src='/vendor/jquery.form.js').
+	script(src="/vendor/layer.min.js").
+	script(src='/js/views/layers.js').
+	script.
+		var t;
+		function switchFresh(checked){
+			if(checked){
+				t = setTimeout('window.location.reload()',1000);
+			}else{
+				clearTimeout(t);
+			}
+		}
+
+		
+

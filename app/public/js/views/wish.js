@@ -32,6 +32,13 @@ $(document).ready(function(){
 				$(sel)[1].disabled=true;
 
 			});
+		}else if($(this).attr("id") == "refuse"){
+			var reason = $(this).parent().siblings("#reason").children("input").val();
+			$.post('/admin/refuse/wish',{id:id,reason:reason},function(data){
+				$(sel)[0].disabled=true;
+				$(sel)[1].disabled=true;
+
+			});
 		}
 	});
 });

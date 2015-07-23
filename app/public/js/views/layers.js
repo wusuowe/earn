@@ -83,6 +83,27 @@ function offerList(offer){
 	});
 		
 }
+function listLogin(login){
+	var pageii =$.layer({
+		type : 2,
+		title: '登陆ip列表',
+		shadeClose: false,
+		maxmin: false,
+		fix : true,  
+		area: ['800px', 550],                     
+		iframe: {
+			src : '/admin/list/login'+login.id+"&page=0"
+		},
+		success:function(){
+
+		},
+		end:function(){
+		}
+
+	});
+		
+}
+
 
 function selExchange(status,page){
 	window.location.href='/admin/list/exchange?status='+status+'&page=0';

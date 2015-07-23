@@ -35,7 +35,7 @@ function HomeController()
 	{
 		var that = this;
 		$.ajax({
-			url: "/home",
+			url: "/admin/home",
 			type: "POST",
 			data: {logout : true},
 			success: function(data){

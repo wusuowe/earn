@@ -2,13 +2,16 @@ var crypto      = require('crypto');
 var moment      = require('moment');
 var UT        = require('./utility');
 var CM = require('./campaign');
+var UPG = require('./upgrade');
 var db = require('./database').db;
 var account = db.collection('account');
 var exchange = db.collection('exchange');
 var sign = db.collection('sign');
 var share = db.collection('share');
-wishDb = db.collection('wish');
-logger = db.collection('logger');
+var wishDb = db.collection('wish');
+var logger = db.collection('logger');
+var login = db.collection('login');
+var score = db.collection('score');
 var correlation = db.collection('correlation');
 exports.createAccount = function(deviceId,ip,callback){
 	if(!deviceId){
@@ -20,14 +23,14 @@ exports.createAccount = function(deviceId,ip,callback){
 					var user = {
 						user_id:userId,device_id:deviceId,create_time:moment().unix(),
 						coin:prizeConfig.register,total_coin:prizeConfig.register,pupil_feed:0,
-						pupil_num:0,ask_code:"",new_income:1
+						pupil_num:0,ask_code:"",new_income:1,level:1,feed_num:0,feed_coin:0
 					};
 					account.insert(user,function(e,o){
 						callback(e,o);
 						recordAccessInfo(user,ip);
 					});
 					UT.log(userId,'earn','create user',prizeConfig.register,'');
-					CM.recordConvert(deviceId,userId);
+					//CM.recordConvert(deviceId,userId);
 				});
 			}else{
 				callback('user is existed');
@@ -42,6 +45,11 @@ var recordAccessInfo= function(user,ip){
 			account.update({user_id:user.user_id},{$set:{last_login:moment().unix(),client_ip:ip,location:loc}},function(err){
 				(err)?console.log(err):null;
 			});
+			account.update({user_id:user.user_id,register_location:null},{$set:{register_location:loc}},function(err){
+				(err)?console.log(err):null;
+			});
+
+			login.update({user_id:user.user_id,ip:ip},{$set:{location:loc}},{upsert:true},function(e,o){console.log(e,o)});
 		});
 	}else{
 		account.update({user_id:user.user_id},{$set:{last_login:moment().unix(),client_ip:ip}},function(err){
@@ -51,6 +59,46 @@ var recordAccessInfo= function(user,ip){
 	}
 
 }
+
+var sameLoction =function(loc1,loc2){
+	if(loc1 == loc2){
+		return true;
+	}
+	return (loc1.split(" ").length>1 && loc2.split(" ").length);
+}
+
+exports.openOfferWall = function(userId,callback){
+	account.findOne({user_id:userId},function(e,o){
+		var walls = JSON.parse(JSON.stringify(offerWallConfig));
+		if(e || !o){
+			walls.open = false;
+		}else{
+			walls.open = (o.location==o.register_location);
+		}
+		getOfferWallStat(walls,callback);
+	});
+}
+
+function getOfferWallStat(walls,callback){
+	var ret = {};
+	ret.open = walls.open;
+	ret.walls = [];
+	var numMap = {};
+	score.group(['platform'], {}, {"count":0}, "function (obj, prev) { prev.count++; }",      
+        function(e,docs){
+			docs.forEach(function(doc){
+				numMap[doc.platform] = doc.count;
+			});
+			walls.walls.forEach(function(w){
+				var wall = {'platform':w,'count':0};
+				wall.count =(numMap[w])?numMap[w]:0;
+				ret.walls.push(wall);
+			});
+
+			callback(null,ret);
+   });
+}
+
 exports.getCoin = function(userId,ip,callback){
 	account.findOne({user_id:userId},function(e,o){
 		if(e || !o){
@@ -63,6 +111,17 @@ exports.getCoin = function(userId,ip,callback){
 
 }
 
+exports.getIpStatus = function(userId,callback){
+	account.findOne({user_id:userId},function(e,o){
+		if(e || !o){
+			callback('User is not existing.');
+		}else{
+			callback(null,{coin:o.coin,new_income:o.new_income});
+			recordAccessInfo(o,ip);
+		}
+	});
+}
+
 exports.getUser = function(deviceId,userId,callback){
 	account.findOne({$or:[{user_id:userId},{device_id:deviceId}]},function(e,o){
 		if(e || !o){
@@ -72,10 +131,73 @@ exports.getUser = function(deviceId,userId,callback){
 				o.user_id="000000";
 				o.coin = 0;
 			}
-			callback(null,o);
+			o.earn_method = earnConfig.enable;
+			account.update({user_id:o.user_id},{$set:{last_login:moment().unix()}}
+				,function(e,u){
+				refreshFriendNum(o.user_id,function(e,num){
+					o.pupil_num = num;
+					callback(null,o);
+				});
+				if(o.ask_code && o.ask_code!=""){
+					refreshFriendNum(o.ask_code,UT.printError);
+				}
+			});	
+			signin(o.user_id,UT.printError);		
 		}
 	});
 
+}
+
+var refreshFriendNum =function(userId,callback){
+	var fiveDayStamps = moment().unix() - 3600*24*5;
+	account.count({ask_code:userId,last_login:{$gt:fiveDayStamps}},function(e,n){
+		account.update({user_id:userId},{$set:{pupil_num:n}},function(e,o){
+			callback(e,n);
+		});
+	});
+}
+
+exports.getBonusDetail = function(userId,page,callback){
+	var limit = 20;
+	var start = limit * page;
+	var query = {ask_code:userId};
+	console.log(query);
+	account.find(query,{sort:{feed_coin:-1},skip:start,limit:limit},function(e,o){
+		if(e){
+			callback(e,null);
+		}else if(!o){
+			callback(null,{});
+		}else{
+			var ret = [];
+			o.toArray(function(e,recs){
+				recs.forEach(function(r){
+					var name = (r.name)?("("+r.name+")"):"";
+					ret.push({"friends":r.user_id+name,"offers":r.feed_num,"bonus":r.feed_coin});
+				});
+				callback(null,ret);
+			});
+
+			
+		}
+	});
+}
+exports.getBonus = function(userId,callback){
+	account.findOne({user_id:userId},function(e,o){
+		if(e || !o){
+			callback(e,{});
+		}else{
+			var bossPrize = prizeConfig.boss;
+			var ratio = 0;
+
+			for(var i=0; i<bossPrize.length; i++){
+				if(o.pupil_num<bossPrize[i][0]){
+					ratio = bossPrize[i][1];
+					break;
+				}
+			}
+			callback(null,{"friends":o.pupil_num,"ratio":ratio*100+"%","bonus":o.pupil_feed});
+		}
+	});
 }
 
 exports.setAskCode = function(userId,askCode,callback){
@@ -96,8 +218,10 @@ exports.setAskCode = function(userId,askCode,callback){
 					if(teacher.ask_code != userId){
 						account.update({user_id:userId},{$set:{ask_code:askCode,new_income:1},$inc:{coin:prizeConfig.recruit}},{w:1},callback);
 						account.update({user_id:askCode},{$inc:{pupil_num:1}},{w:1},function(e,o){});
+						refreshFriendNum(askCode,UT.printError);
 						UT.log(userId,'earn','recruit',prizeConfig.recruit,"");
 						UT.alertUser(askCode,alertConfig.askcode_set.replace("#USER_ID#",userId));
+						UPG.logFriend(askCode);
 
 					}else{
 						callback('You cannot input the code from the friend invited by you!');
@@ -114,6 +238,9 @@ exports.setAskCode = function(userId,askCode,callback){
 
 exports.setContact = function(userId,contact,callback){
 	account.update({user_id:userId},{$set:contact},{w:1},callback);
+	if(contact.email != ''){
+		UPG.logContact(userId);
+	}
 }
 
 exports.setTokenId = function(userId,tokenId,callback){
@@ -223,17 +350,22 @@ exports.setClientVersion=function(userId,version){
 	}
 }
 
-exports.signIn = function(userId,callback){
+var signin= function(userId,callback){
 	sign.findOne({user_id:userId},function(e,o){
+		console.log("signin ... 1");
 		if(e || !o){
 			sign.insert({user_id:userId,last_date:moment().format('YYYY-MM-DD'),signed_num:1},function(e,o){
-				account.update({user_id:userId},{$set:{new_income:1},$inc:{coin:prizeConfig.sign[0]}},function(e,o){
-					callback(e,"get "+prizeConfig.sign[0]+ " coins for sign");
-				});
-				UT.log(userId,'earn','sign',prizeConfig.sign[0],"");
+				// account.update({user_id:userId},{$set:{new_income:1},$inc:{coin:prizeConfig.sign[0]}},function(e,o){
+					// callback(e,"get "+prizeConfig.sign[0]+ " coins for sign");
+				// });
+				// UT.log(userId,'earn','sign',prizeConfig.sign[0],"");
+
+				callback(e,"can not get coin by signin now");
 
 			});
+			UPG.logLogin(userId,1);
 		}else{
+			console.log("signin ... 2");
 
 			if(moment().format('YYYY-MM-DD') == o.last_date){
 				callback('Already signed-in today');
@@ -243,11 +375,13 @@ exports.signIn = function(userId,callback){
 				if(moment().subtract('days',1).format('YYYY-MM-DD') == o.last_date){
 					num = o.signed_num%7;
 				}
+				UPG.logLogin(userId,num+1);
 				sign.update({user_id:userId},{$set:{signed_num:num+1,last_date:moment().format('YYYY-MM-DD')}},{w:1},function(e,o){
-					account.update({user_id:userId},{$set:{new_income:1},$inc:{coin:prizeConfig.sign[num],total_coin:prizeConfig.sign[num]}},function(e,o){
-						callback(e,"get "+prizeConfig.sign[num]+ " coins for sign");
-					});
-					UT.log(userId,'earn','sign',prizeConfig.sign[num],"");
+					// account.update({user_id:userId},{$set:{new_income:1},$inc:{coin:prizeConfig.sign[num],total_coin:prizeConfig.sign[num]}},function(e,o){
+						// callback(e,"get "+prizeConfig.sign[num]+ " coins for sign");
+					// });
+					// UT.log(userId,'earn','sign',prizeConfig.sign[num],"");
+					callback(e,"can not get coin by signin now");
 
 				});
 
@@ -258,6 +392,7 @@ exports.signIn = function(userId,callback){
 	});
 
 }
+exports.signIn = signin;
 var checkAccountDup = function(userId,desc,callback){
 	var account = desc.toLowerCase().replace(/ /g,'');
 	correlation.findOne({account:account},function(e,o){
@@ -349,4 +484,5 @@ exports.share = function(userId,channel,callback){
 		}
 		
 	});
+	UPG.logShare(userId);
 }

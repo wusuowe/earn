@@ -13,7 +13,7 @@ module.exports = {
 	CocoSecret : {'ios':'coco2wsx3edc','android':'coco2wsx3edc'},
 	LimeiSecret : {'ios':'33ae123d98b522a34fcb893f28ae173b','android':''},
 	PlayerizeKey : {'android':'0537aedc5722bcd0ed46c0842a9ad75f','ios':'d377795509fdae56914b419a44bb5fd1'},
-	SupperSonicKey: {'android':'05fc3a','ios':'a7d29c'},
+	SuperSonicKey: {'android':'05fc3a','ios':'a7d29c'},
 	TrialpayKey: {'android':'b5bb4f3e72','ios':'b5bb4f3e72'},
 	TokenadsKey: {'android':'d09ad5dce2b85d7c','ios':'d09ad5dce2b85d7c'},
 	recordQueryInterval:30,	

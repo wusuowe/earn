@@ -1,6 +1,7 @@
 var crypto      = require('crypto');
 var moment      = require('moment');
 var UT        = require('./utility');
+var UPG        = require('./upgrade');
 var ST = require('./setting');
 var secretKey = ST.secretKey;
 
@@ -69,10 +70,15 @@ function addCoin(userId,deviceId,points,desc,callback){
 		}else{
 			var now = moment().unix();
 			if(!o.task_time || (o.task_time+90) < now){
-				account.update({user_id:o.user_id},{$inc:{coin:points},$set:{new_income:1,task_time:now}},{w:1},callback);
-				UT.log(o.user_id,'earn','ad',points,desc);
+				var ratio = 1.0;
+				if(!o.level && o.level>=2 && o.level<=7){
+					ratio = 1+levelConfig[o.level-2].ratio;
+				}
+				account.update({user_id:o.user_id},{$inc:{coin:points*ratio},$set:{new_income:1,task_time:now}},{w:1},callback);
+				UT.log(o.user_id,'earn','ad',points*ratio,desc);
+				UPG.logCoin(o.user_id,points);
 				if(o.ask_code){
-					awardBoss(o.user_id,o.ask_code,points);
+					awardBoss(o.user_id,o.ask_code,points);					
 				}
 			}else{
 				account.update({user_id:o.user_id},{$set:{task_time:now}},callback);
@@ -84,7 +90,8 @@ function addCoin(userId,deviceId,points,desc,callback){
 
 function awardBoss(userId,shareCode,coins){
 	console.log({ask_code:shareCode});
-	account.count({ask_code:shareCode},function(e,o){
+	var fiveDayStamps = moment().unix() - 3600*24*5;
+	account.count({ask_code:shareCode,last_login:{$gt:fiveDayStamps}},function(e,o){
 		if(o){
 			var bossPrize = prizeConfig.boss;
 			var prize = 0;
@@ -97,7 +104,10 @@ function awardBoss(userId,shareCode,coins){
 			account.update({user_id:shareCode},{$inc:{coin:prize,total_coin:prize,pupil_feed:prize},$set:{new_income:1}},{w:1},function(e,o){
 				console.log({user_id:shareCode},{$inc:{coin:prize,total_coin:prize,pupil_feed:prize}});
 				UT.log(shareCode,'share','',prize,userId);
+				UPG.logFeed(userId,prize);
 			});
+
+			account.userId({user_id:userId},{$inc:{feed_num:1,feed_coin:prize}},UT.printError);
 		}
 
 	});
@@ -106,7 +116,7 @@ function awardBoss(userId,shareCode,coins){
 exports.postbackLimei = function(fd,os,callback){
 	if (validateLimei(fd,ST.LimeiSecret[os])){
 		fd = formatFeedData(fd,os,'Limei');	
-		score.findOne({order:fd.orderId,platform:fd.platform},function(e,o){
+		score.findOne({orderId:fd.orderId,platform:fd.platform},function(e,o){
 			if(o){
 				callback('duplication feed');
 			}else{
@@ -435,17 +445,17 @@ exports.postbackNativeX = function(fd,os,callback){
 	});
 
 }
-var validateSupersonic = function(fd,key){
+var validateSuperSonic = function(fd,key){
 	var params = fd.timestamp+fd.eventId+fd.appUserId+fd.rewards+key;
 	console.log("supper sonic sign:"+fd.signature+" vs "+UT.md5(params));
 	return fd.signature == UT.md5(params);
 }
-exports.postbackSupersonic = function(fd,os,callback){
-	if(validateSupersonic(fd,ST.SupperSonicKey[os])){
-		fd = formatFeedData(fd,os,'Supersonic');		
-		score.findOne({event_id:fd.eventId,platform:fd.platform},function(e,o){
+exports.postbackSuperSonic = function(fd,os,callback){
+	if(validateSuperSonic(fd,ST.SuperSonicKey[os])){
+		fd = formatFeedData(fd,os,'SuperSonic');	
+		score.findOne({eventId:fd.eventId,platform:fd.platform},function(e,o){
 			if(o){
-				callback('duplication feed');
+				callback(e,fd.eventId+":OK");
 			}else{
 				score.insert(fd,{safe: true},function(e,o){
 					if(e){
@@ -543,7 +553,7 @@ var validateFyber = function(fd,key){
 exports.postbackFyber = function(fd,callback){
 	if(validateFyber(fd,ST.FyberKey)){
 		fd = formatFeedData(fd,os,'Fyber');	
-		score.findOne({trans_id:fd._trans_id_,platform:fd.platform},function(e,o){
+		score.findOne({_trans_id_:fd._trans_id_,platform:fd.platform},function(e,o){
 			if(o){
 				callback('duplication feed');
 			}else{
@@ -625,7 +635,7 @@ var nameMap = {
 		fd_coin:'new',
 		fd_adname:'adname'
 		},
-	Supersonic:{
+	SuperSonic:{
 		fd_user:'appUserId',
 		fd_device:'device',
 		fd_coin:'rewards',

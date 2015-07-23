@@ -33,7 +33,9 @@ block content
 				div.div-table-col
 					a(href="/admin/user/list?ask_code="+item.user_id+"&page=0")=item.pupil_num
 				div.div-table-mid-col=item.last_login
-				div.div-table-mid-col=item.location
+				div(id="?ip="+item.client_ip,onclick="javascript:listLogin(this);").div-table-mid-col
+					a=item.location+"(同IP段信息)"
+
 				div.div-table-col=item.status
 				div.div-table-col 
 					button(id=item.user_id,type="button",style="width:60px;",onclick="javascript:userStat(this);") 详情 
@@ -41,6 +43,6 @@ block content
 block scripts
 	script(src='/vendor/jquery.min.js').
 	script(src='/vendor/jquery.form.js').
-	script(src="/vendor/layer.min.js").
+	script(src="/vendor/layer/layer.min.js").
 	script(src='/js/views/layers.js').
 

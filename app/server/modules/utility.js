@@ -1,14 +1,19 @@
 var moment      = require('moment');
 var ST = require('./setting');
 var NT = require('./notify');
+var MSG = require('./message');
 var crypto 		= require('crypto');
 var ICVL  = require('iconv-lite');
 var database = require('./database');
 var db = database.db;
 var lottery = db.collection('lottery');
+var logger = db.collection('logger');
+var login = db.collection('login');
+var survey = db.collection('survey');
 var configDb = db.collection('config');
 var exchangeDb = db.collection('exchange');
 var accountDb = db.collection('account');
+var activityDb = db.collection('activity');
 var ObjectID = require('mongodb').ObjectID;
 var schedule = require("node-schedule");
 var request = require('request');
@@ -108,6 +113,9 @@ var loadConfig= function(filename,callback){
 			newGameConfig = config.new_game;
 			alertConfig = config.alert[LANG];
 			versionConfig = config.version[LANG];
+			levelConfig = config.upgrade[LANG];
+			offerWallConfig = config.offerwall[LANG];
+			earnConfig = config.earn;
 			callback(null,null);
 		}
 	});
@@ -158,7 +166,21 @@ exports.deleteExchange = function(id,callback){
 		{$set:{status:"delete"}},callback);
 }
 
+exports.getIpList = function(userId,ip,page,callback){
+	var limit = 20;
+	var start = page*20;
+	var query = {};
+	if(ip){
+		query.ip = RegExp(ip.replace(/\./g,'\\.').replace(/\.[\d]+$/,"..*"));
+	}
+	if(userId){
+		query.user_id = userId;
+	}
 
+	login.find(query,{sort:{ip:1},skip:start,limit:limit},function(e,o){
+		o.toArray(callback);
+	});
+}
 exports.getRecord = function(userId,type,subType,page,callback){
 	var limit = 20;
 	var start = page*20;
@@ -247,14 +269,19 @@ exports.getLatestMessage = function(callback){
 					if(e){
 						callback(e);
 					}else{
+						
 						lastQueryMsgTime = moment().unix();
 						o.forEach(function(rec){
-							rec.elaspe_time = lastQueryMsgTime-rec.time;
-							rec.sub_type = type2Name[rec.sub_type];
+							// rec.elaspe_time = lastQueryMsgTime-rec.time;
+							// rec.sub_type = type2Name[rec.sub_type];
+							latestMessage.system += " " + moment(rec.time*1000).fromNow()
+							+ " " + rec.user_id + " redeemed $" + rec.note 
+							+ " " + type2Name[rec.sub_type] +".  " ;
 						});
 
-						latestMessage.exchange = o;
+						latestMessage.exchange = [];
 						callback(e,latestMessage);
+						
 					}
 				});
 			}
@@ -408,6 +435,7 @@ var alertAll = function(message){
 		rows.toArray(function(err,users){
 			console.log(users);
 			users.forEach(function(user){
+				MSG.insertMsg(user.user_id,message,perror);
 				if(user.device_id.length == 18 && user.token_id){ //android
 					if(!androidPushed){ 
 						NT.androidPush(null,"broadcast","You have a message",systemConfig.app_name,message);
@@ -428,6 +456,7 @@ var alertUser = function(userId,message){
 	accountDb.findOne({user_id:userId},{user_id:1,token_id:1,device_id:1,token_id:1},function(e,user){
 		console.log(e+":"+user+":"+(!e && user))
 		if(!e && user){
+			MSG.insertMsg(user.user_id,message,perror);
 			if(user.device_id.length == 18 && user.token_id){ //android
 				NT.androidPush(user.token_id,"unicast","You have a message",systemConfig.app_name,message);
 			}else if(user.device_id.length == 36 && user.token_id){ //ios
@@ -498,4 +527,51 @@ function fetchContent(url,callback){
 		});
 	});
 }
+exports.checkAnswer = function(userId,answer,callback){
+	survey.findOne({user_id:userId,survey_no:'xxxxx'},function(e,o){
+		if(o){
+			callback("You have completed before");
+		}else{
+			var coin = 0;
+			var answers = answer.split(",");
+			for(var i in answers){
+				if(parseInt(answers[i]) == earnConfig.surver_answer[i]){
+					coin += earnConfig.survey.problems[i].score;
+				}else{
+					break;
+				}
+			};
+			survey.insert({user_id:userId,survey_no:'xxxxx',answer:answer},function(e,o){});
+			accountDb.update({user_id:userId},{$inc:{coin:coin}},function(e,o){});
+			callback(null,"You get "+coin+" coins");
+		}
+	});
+	
+}
+exports.logActivity = function(userId,u){
+	activityDb.findOne({user_id:userId},function(e,o){
+		if(e || !o){
+			activityDb.insert({user_id:userId,info:0,login:0,share:0,zeens:0,friends:0},function(e,o){
+				activityDb.update({user_id:userId},u,function(e,o){
+					if(e){
+						console.log('log activity:',e);
+					}
+				});
+			});
+		}else{
+			activityDb.update({user_id:userId},u,function(e,o){
+				if(e){
+					console.log('log activity:',e);
+				}
+			});
+		}
+	});
+}
 
+
+var perror =function(e,o){
+	if(e){
+		console.log("error:",e);
+	}
+}
+exports.printError = perror;

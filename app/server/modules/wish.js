@@ -2,6 +2,7 @@ var UT        = require('./utility');
 var ObjectID = require('mongodb').ObjectID;
 var db = require('./database').db;
 var account = db.collection('account');
+var wishDb = db.collection('wish');
 exports.recordWish = function(userId,desc,callback){
 	wishDb.findOne({user_id:userId,status:{$in:['create','confirm']}},function(e,o){
 		if(e){
@@ -11,7 +12,10 @@ exports.recordWish = function(userId,desc,callback){
 				if(e){
 					callback(e);
 				}else{
-					getCurWish(userId,callback);
+					wishDb.update({user_id:userId,status:'refused'},{$set:{status:'delete'}},function(e,o){
+						getCurWish(userId,callback);
+					});
+
 				}
 			});
 		}else{
@@ -21,32 +25,36 @@ exports.recordWish = function(userId,desc,callback){
 }
 
 
-getCurWish= function(userId,callback){
-	wishDb.findOne({user_id:userId,status:{$in:['create','confirm']}},function(e,o){
-		if(e || !o ){
-			callback(e,"");
-		}else{
-			callback(null,o);
-		}
-	});
+var getCurWish= function(userId,callback){
+	wishDb.findOne({user_id:userId,status:{$in:['create','confirm','refused']}},callback);
 }
+
 exports.getWish = function getWishDetail(userId,callback){
 	getCurWish(userId,function(e,o){
-		var detail = [o.desc];
+		if(e || !o){
+			callback(e,{});
+		}else{
+
+		var detail = (!o.desc)?[]:[o.desc];
 		var wish = systemConfig.wish_detail;
-//		detail.unshift(o.desc);
-	//	console.log(detail);
-	//	console.log(systemConfig);
+
 		if(o.status == 'confirm'){
-			detail.push(wish[0].replace("#PRICE#",o.price).replace("#FREIGHT#",o.freight));
-			detail.push(wish[1].replace("#COIN#",o.coin).replace("#DISCOUNTED#",o.coin/systemConfig.rate));
+			detail.push(wish[0].replace("#PRICE#",o.price));
+			detail.push(wish[1].replace("#DISCOUNT#",o.coin/(o.price*systemConfig.rate)*100));
+			detail.push(wish[2].replace("#ZEENS#",o.coin));
 		}
-		o.desc = detail;
-		o.coin = o.coin + o.freight;
 		delete o["price"];
 		delete o["freight"];
 		delete o["_id"];
+		o.coin = o.coin + o.freight;
+		if(o.coin == undefined || o.coin == NaN){
+			delete o['coin'];
+		}; 
+		o.desc = detail;
+		
 		callback(e,o);
+		}
+
 	});	
 }
 
@@ -86,8 +94,19 @@ exports.confirmWish = function(id,price,discount,freight,callback){
 	});
 }
 
+exports.refuseWish = function(id,reason,callback){
+	wishDb.findOne({_id:ObjectID.createFromHexString(id),status:'create'},function(e,o){
+		if(e||!o){
+			callback('no wished gift under reviewing');
+		}else{			
+			wishDb.update({_id:ObjectID.createFromHexString(id)},{$set:{status:'refused',reason:reason}},function(e,o){
+			callback(e,'wish refused');
+			});
+		}
+	});
+}
 exports.deleteWish = function(user_id,callback){
-	wishDb.update({user_id:user_id,status:{$in:['create','confirm']}},{$set:{status:'delete'}},function(e,o){
+	wishDb.update({user_id:user_id,status:{$in:['create','confirm','refused']}},{$set:{status:'delete'}},function(e,o){
 		if(e){
 			callback(e);
 		}else{
@@ -99,7 +118,7 @@ exports.deleteWish = function(user_id,callback){
 
 
 exports.deleteWishById = function(id,callback){
-	wishDb.update({_id:ObjectID.createFromHexString(id),status:{$in:['create','confirm']}},{$set:{status:'delete'}},callback);
+	wishDb.update({_id:ObjectID.createFromHexString(id),status:{$in:['create','confirm','refused']}},{$set:{status:'delete'}},callback);
 }
 
 exports.exchangeWish = function(user_id,callback){

@@ -40,7 +40,8 @@ block content
 			div.div-table-mid-col 最近登陆时间
 			div.div-table-mid-col=detail.last_login
 			div.div-table-mid-col 登录地区/ip
-			div.div-table-mid-col=detail.location
+			div(id="?user_id="+detail.user_id,onclick="javascript:listLogin(this);").div-table-mid-col
+				a=detail.location+"(登录历史)"
 
 		-var show_status = (detail.status==-1)?"已禁用，点击开启":"正常，点击禁用";
 		-var next_status = (detail.status==-1)?0:-1;
@@ -101,4 +102,5 @@ block content
 block scripts
 	script(src='/vendor/jquery.min.js').
 	script(src='/vendor/jquery.form.js').
+	script(src="/vendor/layer/layer.min.js").
 	script(src='/js/views/layers.js').

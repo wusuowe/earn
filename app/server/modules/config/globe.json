@@ -1,79 +1,246 @@
 {
-	"exchange":{
-		"QQ":{"2":200,"5":500,"10":1000},
-		"phone_card":{"20":2000,"30":3000,"50":5000,"100":10000},
-		"alipay":{"20":2000,"30":3000,"50":5000,"100":10000}
-	},
-	"lottery":{
-		"no":"20140912",
-		"open_date":"2014-09-20",
-		"base":50,
-		"winner_num":6,
-		"count":123,
-		"display":{
-			"cn":{
-				"cost":50,
-				"small_picture":"/static/img/small-lottery.png",
-				"large_picture":"/static/img/large-lottery.png",
-				"title":"iphone 6抽奖",
-				"rule":["每局只需50金币","共6部","9月20号公布结果，先到先得"],
-				"codes_title":"iphone"
+	"version":{
+		"cn":{
+			"ios":{
+				"ver":110,
+				"version_name":"1.1.0",
+				"url":"https://play.google.com/store/apps/details?id=com.privateP.makemoney",
+				"intro":["1.fix some bugs","2.better or easier-to-use capability"]
 			},
-			"en":{
-				"cost":50,
-				"small_picture":"/static/img/small-lottery.png",
-				"large_picture":"/static/img/large-lottery.png",
-				"title": "Win an iPhone 6",
-				"rule": ["500 Mina to draw a lottery",
-				"6 iPhones in total",
-				"We will public the lucky guy at 9/20"],
-				"codes_title":"iphone"
 
-
+			"android":{
+				"ver":200,
+				"version_name":"2.0.0",
+				"url":"https://play.google.com/store/apps/details?id=com.privateP.makemoney",
+				"intro":["1.fix some bugs","2.better or easier-to-use capability"]
 			}
 
+		},
+		"en":{
+			"ios":{
+				"ver":110,
+				"version_name":"1.1.0",
+				"url":"https://play.google.com/store/apps/details?id=com.privateP.makemoney",
+				"intro":["1.fix some bugs","2.better or easier-to-use capability"]
+			},
 
+			"android":{
+				"ver":110,
+				"version_name":"1.1.0",
+				"url":"https://play.google.com/store/apps/details?id=com.privateP.makemoney",
+				"intro":["1.fix some bugs","2.better or easier-to-use capability"]
+			}
+		}
+	},
+	"system":{
+		"cn":{
+			"app_name":"聚能赚",
+			"unit":"元",
+			"rate":1000.0,
+			"message":"欢迎大家来聚能赚挣钱",
+			"wish_detail":["该礼物价值#PRICE#元,礼物运费#FREIGHT#金币","聚能赚购买#COIN#金币 = #DISCOUNTED# 元"]
+		},
+		"en":{
+			"app_name":"TAPZEEN",
+			"unit":"$",
+			"rate":10000.0,
+			"message":"",
+			"wish_detail":["$#PRICE#","#DISCOUNT#%","#ZEENS#"]
 		}
 
+
+	},
+	"alert":{
+		 "cn":{
+		 	"login":"亲，已经三天没回来了，小聚想死你了！快来看看有新的任务了，奖励丰厚哦！",
+		 	"exchange":"亲，您的兑换已经成功发放了，请进行核实。",
+		 	"wish_pass":"亲，您的意愿物已经审核通过啦，快来兑换吧！",
+		 	"askcode_set":"您的好友#USER_ID#已经成功输入您的邀请码，他（她）要开始为您赚钱啦^^",
+		 	"lottery_open":"亲，本次抽奖已经开奖啦，快来看看你是不是那个幸运的小伙伴！",
+			"friend_suspend":"亲，非常遗憾，你的朋友#USER_ID#因为作弊，帐号被注销，我们将同时扣除你朋友反馈给你的金币，谢谢你的理解"
+		 },
+		 "en":{
+		 	"login":"Hi, TAPZEEN prepared some new offers for you, come to earn Zeens!",
+		 	"exchange":"Remind: TAPZEEN has sent out your dreamed gift, please check your mail.",
+		 	"wish_pass":"Hi there, you can redeem your dreamed gift now in TAPZEEN!",
+		 	"askcode_set":"A new friend #USER_ID# joined in TAPZEEN with your invite code, you will start to earn extra zeens^^",
+		 	"lottery_open":"Some lucky guys won the lottery, are you one of them? Check it now!",
+			"friend_suspend":"You friend #USER_ID# is suspended due to cheat, we will reverse the bonus from your friend, thanks for cooperate."
+		 }
+	},
+	"exchange":{
+		"cn":[
+		{"type":"QQ","title":"QQ","rule":[
+			{"num":10,"coin":10000,"rebate":"10%","unit":"￥","show_pic":false,"picture":"exchange/qq-1-1.png"},
+			{"num":20,"coin":18000,"rebate":"20%","unit":"￥","show_pic":false,"picture":"exchange/qq-2-1.png"},
+			{"num":30,"coin":26000,"rebate":"25%","unit":"￥","show_pic":true,"picture":"exchange/qq-3-1.png"}
+			]
+		},
+		{"type":"Phone","title":"Phone","rule":[
+			{"num":20,"coin":18000,"rebate":"20%","unit":"￥","show_pic":false,"picture":"exchange/alipay-2-1.png"},
+			{"num":50,"coin":35000,"rebate":"30%","unit":"￥","show_pic":false,"picture":"exchange/phone-1-1.png"},
+			{"num":100,"coin":60000,"rebate":"40%","unit":"￥","show_pic":false,"picture":"exchange/phone-2-1.png"}
+			]
+		},
+		{"type":"Alipay","title":"Alipay","rule":[
+			{"num":30,"coin":26000,"rebate":"25%","unit":"￥","show_pic":false,"picture":"exchange/phone-3-1.png"},
+			{"num":50,"coin":35000,"rebate":"30%","unit":"￥","show_pic":false,"picture":"exchange/alipay-3-1.png"},
+			{"num":100,"coin":60000,"rebate":"40%","unit":"￥","show_pic":false,"picture":"exchange/alipay-1-1.png"}
+			]
+		}
+
+		],
+
+		"en":[
+		{"type":"Amazon","title":"Amazon Gift Card","account":[{"type":"text","hint":"Your name"},{"type":"email","hint":"Your Email"}],"rule":[
+			{"num":2,"coin":18000,"rebate":"10%","unit":"$","show_pic":false,"picture":"exchange/amazon-1-1.png"},
+			{"num":5,"coin":40000,"rebate":"25%","unit":"$","show_pic":false,"picture":"exchange/amazon-2-1.png"},
+			{"num":10,"coin":70000,"rebate":"30%","unit":"$","show_pic":false,"picture":"exchange/amazon-3-1.png"}
+			]
+		},
+		{"type":"iTunes","title":"iTunes Gift Card","account":[{"type":"text","hint":"Your country"},{"type":"email","hint":"Your Email"}],"rule":[
+			{"num":10,"coin":70000,"rebate":"30%","unit":"$","show_pic":false,"picture":"exchange/itunes-1-1.png"},
+			{"num":20,"coin":120000,"rebate":"40%","unit":"$","show_pic":false,"picture":"exchange/itunes-2-1.png"}
+			]
+		},
+		{"type":"PayPal","title":"PayPal Cash","account":[{"type":"text","hint":"Your name"},{"type":"text","hint":"Your PayPal Account"}],"rule":[
+			{"num":2,"coin":18000,"rebate":"20%","unit":"$","show_pic":false,"picture":"exchange/paypal-1-1.png"},
+			{"num":5,"coin":40000,"rebate":"25%","unit":"$","show_pic":false,"picture":"exchange/paypal-2-1.png"},
+			{"num":10,"coin":70000,"rebate":"30%","unit":"$","show_pic":false,"picture":"exchange/paypal-3-1.png"}
+			]
+		}
+
+		]
+	},
+	"lottery":{
+		"cn":{
+			"no":"20141220",
+			"open_date":"2014-12-20",
+			"base":500,
+			"winner_num":6,
+			"count":123,
+			"display":{
+				"cost":500,
+				"small_picture":"/img/small-lottery.png",
+				"large_picture":"/img/large-lottery.png",
+				"title":"iphone 6抽奖",
+				"rule":["每注500金币","投注越多，中奖率越大","本抽奖与App Store无任何关系"],
+				"codes_title":"iphone"
+			}
+		},
+		"en":{
+			"no":"20141225",
+			"open_date":"2014-12-25",
+			"base":500,
+			"winner_num":1,
+			"count":123,
+			"display":{
+				"cost":500,
+				"small_picture":"/img/small-lottery.png",
+				"large_picture":"/img/large-lottery-1.png",
+				"title": "Win an iPhone 6",
+				"rule": ["500 Zeens to draw a lottery",
+				"More tickets you buy more chances to win",
+				"We will announce the lucky guy at 12/25"],
+				"codes_title":"iphone"
+			}
+		}
 
 	},
 	"prize":{
-		"register":100,
-		"sign":[7,30,30,7,30,30,30],
-		"share":20,
-		"comment":50,
-		"boss":[[10,0.15],[50,0.2],[150,0.3],[300,0.4],[1000000,0.5]]
+		"cn":{
+			"register":4000,
+			"sign":[100,200,300,400,500,600,700],
+			"share":100,
+			"recruit":2000,
+			"comment":0,
+			"boss":[[10,0.15],[50,0.2],[150,0.3],[300,0.4],[1000000,0.5]],
+			"rebate":0.5
+		},
+		"en":{
+			"register":4000,
+			"sign":[100,200,300,400,500,600,700],
+			"share":100,
+			"recruit":2000,
+			"comment":0,
+			"boss":[[10,0.10],[20,0.2],[40,0.3],[70,0.4],[1000000,0.5]],
+			"rebate":0.5
+		}
 
 	},
 	"scratch":{
-		"base":30,
-		"min":0,
-		"ratio":0.8,
-		"pool":{"5":40,"10":30,"15":20,"20":10,"25":10,"50":10,"100":10,"200":10,"300":5},
-		"picture":{"happy":"/static/img/happy.png","encourage":"/static/img/encourage.png"},	
-		"high_value":20,
-		"display":{
-			"cn":{
+		"cn":{
+			"base":30,
+			"min":5,
+			"ratio":0.95,
+			"pool":{"10":5,"15":5,"20":10,"35":10,"100":1,"200":1,"300":1},
+			"picture":{"happy":"/img/happy.png","encourage":"/img/encourage.png"},	
+			"high_value":30,
+			"display":{
 				"cost":30,
-				"small_picture":"/static/img/small-scratch.png",
-				"large_picture":"/static/img/large-scratch.png",
+				"small_picture":"/img/small-scratch.png",
+				"large_picture":"/img/large-scratch.png",
 				"title":"刮刮卡",
-				"rule":["每局只需30金币","不限制次数","最高10倍奖励"]
-			},
-			"en":{
+				"rule":["每局只需30金币","最高10倍奖励","本活动与App Store无任何关系"]
+			}
+		},
+		"en":{
+			"base":30,
+			"min":5,
+			"ratio":0.95,
+			"pool":{"10":5,"15":5,"20":10,"35":10,"100":1,"200":1,"300":1},
+			"picture":{"happy":"/img/happy.png","encourage":"/img/encourage.png"},	
+			"high_value":30,
+			"display":{
 				"cost": 30,
-				"small_picture": "/static/img/small-scratch.png",
-				"large_picture": "/static/img/large-scratch.png",
+				"small_picture": "/img/small-scratch.png",
+				"large_picture": "/img/large-scratch.png",
 				"title": "Scratch Card",
-				"rule": ["30 Mina for every scratch",
-				"No frequency of play",
-				"100% win Mina back, top prize is 300 Mina"]
-
+				"rule": ["30 Zeens to play",
+				"No frequency limit",
+				"100% win Zeen back, top prize is 300 Zeens"]
 			}
 		}
-
-
 	},
+	"new_game":{
+		"cn":{
+			"base":30,
+			"disable":"true",
+			"out_link":"http://www.tapzeen.com",
+			"min":5,
+			"ratio":0.97,
+			"pool":{"10":5,"15":5,"20":10,"35":10,"100":1,"200":1,"300":1},
+			"picture":{"happy":"/img/happy.png","encourage":"/img/encourage.png"},	
+			"high_value":30,
+			"display":{
+				"cost":30,
+				"small_picture":"/img/small-scratch.png",
+				"large_picture":"/img/large-scratch.png",
+				"title":"刮刮卡",
+				"rule":["每局只需30金币","最高10倍奖励","本活动与App Store无任何关系"]
+			}
+		},
+		"en":{
+			"base":30,
+			"disable":"true",
+			"out_link":"http://www.tapzeen.com",
+			"min":5,
+			"ratio":0.97,
+			"pool":{"10":5,"15":5,"20":10,"35":10,"100":1,"200":1,"300":1},
+			"picture":{"happy":"/img/happy.png","encourage":"/img/encourage.png"},	
+			"high_value":30,
+			"display":{
+				"cost": 30,
+				"small_picture": "/img/small-scratch.png",
+				"large_picture": "/img/large-scratch.png",
+				"title": "Scratch Card",
+				"rule": ["30 Zeens to play",
+				"No frequency limit",
+				"100% win Zeen back, top prize is 300 Zeens"]
+			}
+		}
+	},
+
 	"share":{
 		"android":{
 			"url":"http://android/download/link"
@@ -85,31 +252,202 @@
 	},
 	"slyder":
 	{
-		"min":1,
-		"base":30,
-		"ratio":0.8,
-		"pool":{"5":10,"10":10,"15":10,"20":10,"25":10,"50":10,"60":10,"80":10,"300":10,"600":10},
-		"postion":{"1":0,"5":1,"10":2,"15":3,"20":4,"25":5,"50":6,"100":7,"200":8,"300":9},
-		"picture":"/static/img/slyder.png",
-		"display":{
-			"cn":{
+		"cn":{
+			"min":0,
+			"base":30,
+			"ratio":0.95,
+			"pool":{"5":2,"10":2,"20":4,"25":32,"60":16,"100":4,"300":2,"600":1},
+			"postion":{"0":5,"600":0,"10":7,"25":8,"300":9,"60":11,"20":1,"100":3,"5":4},
+			"picture":"/img/slyder.png",
+			"display":{
 				"cost":30,
-				"small_picture":"/static/img/small-slyder.png",
-				"large_picture":"/static/img/large-slyder.png",
+				"small_picture":"/img/small-slyder.png",
+				"large_picture":"/img/large-slyder.png",
 				"title":"大转盘",
 				"rule":["每局只需30金币","不限制次数","最高20倍奖励"]
-			},
-			"en":{
+			}	
+		},
+		"en":{
+			"min":0,
+			"base":30,
+			"ratio":0.95,
+			"pool":{"5":32,"10":2,"20":4,"25":16,"60":16,"100":4,"300":2,"600":1},
+			"postion":{"0":5,"600":0,"10":7,"25":8,"300":9,"60":11,"20":1,"100":3,"5":4},
+			"picture":"/img/slyder.png",
+			"display":{
 				"cost": 30,
-				"small_picture": "/static/img/small-slyder.png",
-				"large_picture": "/static/img/large-slyder.png",
+				"small_picture": "/img/small-slyder.png",
+				"large_picture": "/img/large-slyder.png",
 				"title": "Wild Wheel",
-				"rule": ["30 Mina for every scratch",
-				"No frequency of play",
-				"Top prize is 600 Mina"	]
+				"rule": ["30 Zeens to play",
+				"No frequency limit",
+				"Top prize is 600 Zeen"	]
 
 			}
 		}
 
+	},
+	"record_subtype":
+	{
+		"cn":
+		{
+			"create user":"新用户注册",
+			"sign":"签到",
+			"share":"分享",
+			"recruit":"邀请码",
+			"scratch":"刮刮卡",
+			"slyder":"大转盘",
+			"ad":"任务奖励",
+			"rebate":"兑换返点",
+			"QQ":"#NUM#元Q币",
+			"Alipay":"#NUM#元支付宝",
+			"Phone":"#NUM#元电话卡"
+		},
+		"en":
+		{
+			"create user":"create user",
+			"sign":"sign in",
+			"share":"share",
+			"recruit":"invite code",
+			"scratch":"scratch card",
+			"slyder":"Wild Wheel",
+			"ad":"complete featured offer",
+			"rebate":"redeem bonus",
+			"Amazon":"$#NUM# Amazon Gift Card",
+			"iTunes":"$#NUM# iTunes Gift Card",
+			"PayPal":"$#NUM# PayPal Cash"
+		}
+	},
+	"share_ratio":{
+		"cn":
+			[{"num":"10以下","ratio":"15%"},{"num":"10-49","ratio":"20%"},{"num":"50-149","ratio":"30%"},{"num":"150-299","ratio":"40%"},{"num":"300以上","ratio":"50%"}],
+
+		"en":
+			[
+			{"num":"1-9","ratio":"10%"},{"num":"10-19","ratio":"20%"},{"num":"20-39","ratio":"30%"},{"num":"40-69","ratio":"40%"},{"num":">=70","ratio":"50%"}
+		]
+	},
+	"earn":{
+		"enable":"survery",
+		"surver_answer":[1,3,2,1],
+		"survey":{
+			"completed":0,
+			"introduce":"每道题只有一次回答的机会哦，回答之前一定要想好哦，题目每周更新，连续答对奖励翻倍！",
+			"problems":
+				[
+				{
+					"problem":"1.手机游戏《刀塔传奇》中潮汐猎人的施法前摇是多久? ",
+					"score":100,
+					"options":["0.5秒","1秒","1.2秒"] 
+				},
+				{
+					"problem":"2.手机游戏《Stick Hero》中目前排名最高的分数是多少?",
+					"score":200,
+					"options":["1000","1200","5000"]
+				},
+				{
+					"problem":"3.手机游戏《暖暖环游世界》中红蝴蝶佩饰的售价是多少金币？",
+					"score":400,
+					"options":["50","70","100"]
+				},
+				{
+					"problem":"4.手机游戏《杀手狙击之神》中的子弹时间还在以下那部游戏中出现过？",
+					"score":800,
+					"options":["猎鹿人","火线指令","枪火兄弟"]
+				}
+			]
+		}
+	},
+	"upgrade":{
+		"en":[
+		{  "level":2,"status":"locked","ratio":0.02,"conditions":
+			[
+			{"content":"1.Fill up your information","status":"uncompleted"},
+			{"content":"2.Share your invite code to your friends.","status":"uncompleted"}
+			]
+		},
+		{"level":3,"status":"locked","ratio":0.04,"conditions":
+			[
+			{"content":"1.Daily log in Tapzeen for 2 days in a row.","status":"uncompleted"},
+			{"content":"2.Earn 500 Zeens by downloading recommended offers. ","status":"uncompleted"}
+			]
+		},
+		{"level":4,"status":"locked","ratio":0.06,"conditions":
+			[
+			{"content":"1.Daily log in Tapzeen for 3 days in a row.","status":"uncompleted"},
+			{"content":"2.Have at least 1 friend join in Tapzeen with your invitation.","status":"uncompleted"}
+			]
+		},
+		{"level":5,"status":"locked","ratio":0.08,"conditions":
+			[
+			{"content":"1.Daily log in Tapzeen for 4 days in a row.","status":"uncompleted"},
+			{"content":"2.Have at least 2 friend join in Tapzeen with your invitation.","status":"uncompleted"}
+			]
+		},
+		{"level":6,"status":"locked","ratio":0.10,"conditions":
+			[
+			{"content":"1.Daily log in Tapzeen for 5 days in a row.","status":"uncompleted"},
+			{"content":"2.Have at least 3 friends join in Tapzeen with your invitation.","status":"uncompleted"}
+			]
+		},
+		{"level":7,"status":"locked","ratio":0.12,"conditions":
+			[
+			{"content":"1.Daily log in Tapzeen for 7 days in a row.","status":"uncompleted"},
+			{"content":"2.Get 1000 Zeens commissions from your friends.","status":"uncompleted"}
+			]
+		}
+
+		],"cn":[
+		{  "level":2,"status":"locked","ratio":0.02,"conditions":
+			[
+			{"content":"1.Fill up your information","status":"uncompleted"},
+			{"content":"2.Share your invite code to your friends.","status":"uncompleted"}
+			]
+		},
+		{"level":3,"status":"locked","ratio":0.04,"conditions":
+			[
+			{"content":"1.Daily log in Tapzeen for 2 days in a row.","status":"uncompleted"},
+			{"content":"2.Earn 500 Zeens by downloading recommended offers. ","status":"uncompleted"}
+			]
+		},
+		{"level":4,"status":"locked","ratio":0.06,"conditions":
+			[
+			{"content":"1.Daily log in Tapzeen for 3 days in a row.","status":"uncompleted"},
+			{"content":"2.Have at least 1 friend join in Tapzeen with your invitation.","status":"uncompleted"}
+			]
+		},
+		{"level":5,"status":"locked","ratio":0.08,"conditions":
+			[
+			{"content":"1.Daily log in Tapzeen for 4 days in a row.","status":"uncompleted"},
+			{"content":"2.Have at least 2 friend join in Tapzeen with your invitation.","status":"uncompleted"}
+			]
+		},
+		{"level":6,"status":"locked","ratio":0.10,"conditions":
+			[
+			{"content":"1.Daily log in Tapzeen for 5 days in a row.","status":"uncompleted"},
+			{"content":"2.Have at least 3 friends join in Tapzeen with your invitation.","status":"uncompleted"}
+			]
+		},
+		{"level":7,"status":"locked","ratio":0.12,"conditions":
+			[
+			{"content":"1.Daily log in Tapzeen for 7 days in a row.","status":"uncompleted"},
+			{"content":"2.Get 1000 Zeens commissions from your friends.","status":"uncompleted"}
+			]
+		}
+
+		]
+	},
+
+	"offerwall":{
+		"en":{
+			"open":false,
+			"walls":["SuperSonic","Aarki","Tokenads","NativeX"]
+		},
+		"cn":{
+			"open":false,
+			"walls":["Aarki","SuperSonic","Tokenads","NativeX"	]
+		}
+
 	}
+
 }

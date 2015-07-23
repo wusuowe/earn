@@ -35,6 +35,7 @@ block content
 			div.div-table-col 价格($/￥)
 			div.div-table-col 折扣
 			div.div-table-col 运费($/￥)
+			div.div-table-big-col 拒绝理由
 			div.div-table-col 操作
 			div.div-table-col 操作
 
@@ -50,15 +51,17 @@ block content
 					input(type="text",style="width:60px;height:12px",value="8.0")
 				div.div-table-col(id="freight")
 					input(type="text",style="width:60px;height:12px",value="10")
+				div.div-table-big-col(id="reason")
+					input(type="text",style="width:300px;height:12px",value="Sorry, Your wish too difficult to realize!")
 				div.div-table-col
 					button(id="confirm",type="button",style="width:60px;",value=item._id) 确定
 				div.div-table-col
-					button(id="delete",type="button",style="width:60px;",value=item._id) 删除
+					button(id="refuse",type="button",style="width:60px;",value=item._id) 拒绝
 				
 
 block scripts
 	script(src='/vendor/jquery.min.js').
 	script(src='/vendor/jquery.form.js').
-	script(src="/vendor/layer.min.js").
+	script(src="/vendor/layer/layer.min.js").
 	script(src='/js/views/wish.js').
 	script(src='/js/views/layers.js').

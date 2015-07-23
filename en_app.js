@@ -6,9 +6,10 @@ var http = require('http');
 var app = express();
 
 LANG = "en";
-DB_NAME = "earn-money-en";
+DB_NAME = "earn-money-next";
 CONFIG = "config/globe.json";
 
+var UT = require('./app/server/modules/utility');
 app.set('port', 4000);
 app.set('views', __dirname + '/app/server/views');
 app.set('view engine', 'jade');
@@ -23,11 +24,10 @@ app.use(bodyParser.json());
 
 var multer  = require('multer');
 
-app.use(multer({ dest: './uploads/'}));
+app.use(multer({ dest: './app/public/uploads/'}));
 
 //app.use(express.cookieParser());
 app.use(cookieParser());
-//app.use(express.session({ secret: 'super-duper-secret-secret' }));
 //app.use(express.methodOverride());
 //app.use(session({secret: 'keyboard-secret-secret'}))
 
@@ -48,6 +48,12 @@ app.use('/static',express.static(__dirname + '/app/public'));
 
 require('./app/server/router')(app);
 
-http.createServer(app).listen(app.get('port'), function(){
-    console.log("Express server listening on port " + app.get('port'));
+process.on('uncaughtException', function (err) {
+	console.log(err);
+});
+
+UT.initRunEnviroment(function(){
+	http.createServer(app).listen(app.get('port'), function(){
+		console.log("Express server listening on port " + app.get('port'));
+	});
 });
